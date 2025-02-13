@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import "../styles/SearchBar.css";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
-import { AiOutlineLoading3Quarters } from "react-icons/ai"; // Ícono de carga
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 interface SearchBarProps {
   fetchAudio: (url: string, thumbnail: string) => void;
   loading: boolean;
-  youtubeAPI: boolean; // Nuevo prop para saber qué API usar
+  youtubeAPI: boolean;
 }
 
 const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
@@ -15,7 +15,7 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [userSelected, setUserSelected] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // Estado de carga
+  const [isLoading, setIsLoading] = useState(false);
   const urlPreset = "https://www.youtube.com/watch?v=";
 
   useEffect(() => {
@@ -29,12 +29,10 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
   const fetchSuggestions = async (searchTerm: string) => {
     try {
       const response = await fetch(
-        `https://noox.ooguy.com:5030/api/suggestions?query=${encodeURIComponent(searchTerm)}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `https://noox.ooguy.com:5030/api/suggestions?query=${encodeURIComponent(
+          searchTerm
+        )}`,
+        { headers: { "Content-Type": "application/json" } }
       );
       const data = await response.json();
       if (Array.isArray(data)) {
@@ -63,12 +61,13 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
     try {
       setIsLoading(true);
       setSuggestions([]);
-      
-      // Selecciona el endpoint según el valor de youtubeAPI
       const apiUrl = youtubeAPI
-        ? `https://noox.ooguy.com:5030/api/yt-searchytapi?query=${encodeURIComponent(query)}`
-        : `https://noox.ooguy.com:5030/api/yt-search?query=${encodeURIComponent(query)}`;
-  
+        ? `https://noox.ooguy.com:5030/api/yt-searchytapi?query=${encodeURIComponent(
+            query
+          )}`
+        : `https://noox.ooguy.com:5030/api/yt-search?query=${encodeURIComponent(
+            query
+          )}`;
       const response = await axios.get(apiUrl);
       setVideos(response.data);
     } catch (error) {
@@ -87,7 +86,9 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
   return (
     <div className="search-container">
       <div className="search-bar">
-        <FaSearch className="search-icon" />
+        <div className="search-icon-container">
+          <FaSearch className="search-icon" />
+        </div>
         <input
           type="text"
           className="search-input"
@@ -96,15 +97,27 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
         />
-        <button className="search-button" onClick={fetchVideos} disabled={loading}>
-          {isLoading ? <AiOutlineLoading3Quarters className="spinner-icon" /> : "Buscar"}
+        <button
+          className="search-button"
+          onClick={fetchVideos}
+          disabled={loading}
+        >
+          {isLoading ? (
+            <AiOutlineLoading3Quarters className="spinner-icon" />
+          ) : (
+            "Buscar"
+          )}
         </button>
       </div>
 
       {suggestions.length > 0 && (
         <ul className="suggestions-list">
           {suggestions.map((suggestion, index) => (
-            <li key={index} className="suggestion-item" onClick={() => handleSuggestionClick(suggestion)}>
+            <li
+              key={index}
+              className="suggestion-item"
+              onClick={() => handleSuggestionClick(suggestion)}
+            >
               {suggestion}
             </li>
           ))}
@@ -124,7 +137,11 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
                 setVideos([]);
               }}
             >
-              <img src={video.thumbnail} alt={video.title} className="video-thumbnail" />
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="video-thumbnail"
+              />
               <p className="video-title">{video.title}</p>
             </div>
           ))}

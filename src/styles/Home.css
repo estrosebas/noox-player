@@ -67,9 +67,45 @@ body {
     color: #1db954;
     cursor: pointer;
     transition: transform 0.2s ease;
+    z-index: 1001; /* Ensure settings button stays above search */
 }
 
 .settings-button:hover {
     transform: rotate(30deg) scale(1.1);
     color: #17a44a;
+}
+.search-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    width: calc(100% - 100px); /* Reduced width to make room for settings button */
+    max-width: 350px;
+}
+
+
+
+/* Add responsive adjustments */
+@media (max-width: 480px) {
+    .search-container {
+        width: calc(100% - 80px);
+        max-width: none;
+    }
+    
+    .settings-button {
+        font-size: 1.5rem;
+    }
+    
+    .search-bar {
+        padding: 4px 8px;
+    }
+    
+    .search-input {
+        font-size: 14px;
+    }
+    
+    .search-button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
 }
