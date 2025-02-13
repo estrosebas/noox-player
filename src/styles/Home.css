@@ -1,0 +1,75 @@
+/* Fondo con gradiente profesional */
+body {
+    background: linear-gradient(to right, #141e30, #243b55);
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Contenedor principal */
+.container {
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
+    
+}
+
+/* Título principal */
+.titulop {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1db954;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+}
+
+/* Estilos para alertas */
+.alert {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.noox-logo {
+    width: 50%;
+    height: 50%;
+    object-fit: cover;
+    border-radius: 5px;
+}
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .titulop {
+        font-size: 28px;
+    }
+}
+.settings-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    color: #1db954;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.settings-button:hover {
+    transform: rotate(30deg) scale(1.1);
+    color: #17a44a;
+}

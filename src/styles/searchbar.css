@@ -1,0 +1,122 @@
+.search-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    z-index: 1000;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #282828;
+    border-radius: 30px;
+    padding: 8px 15px;
+    width: 300px;
+}
+
+.search-icon {
+    color: #b3b3b3;
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+.search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: white;
+    font-size: 16px;
+}
+
+.search-input::placeholder {
+    color: #b3b3b3;
+}
+
+.search-button {
+    background-color: #1db954;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.search-button:disabled {
+    background-color: #535353;
+    cursor: not-allowed;
+}
+
+.suggestions-list {
+    background: #282828;
+    border-radius: 10px;
+    margin-top: 5px;
+    padding: 5px 0;
+    list-style: none;
+    width: 300px;
+    max-height: 150px;
+    overflow-y: auto;
+    color: white;
+}
+
+.suggestion-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.suggestion-item:hover {
+    background: #333;
+}
+
+.video-list {
+    margin-top: 10px;
+    width: 300px;
+}
+
+.video-item {
+    display: flex;
+    align-items: center;
+    background: #282828;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.video-item:hover {
+    background: #333;
+}
+
+.video-thumbnail {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.video-title {
+    flex: 1;
+    font-size: 14px;
+    color: white;
+}
+.spinner-icon {
+    animation: spin 1s linear infinite;
+    font-size: 1rem;
+  }
+  
+  .loading-text {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-top: 10px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
