@@ -4,7 +4,7 @@ body {
     font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 0;
-    display: flex;
+    display: absolute;
     justify-content: center;
     align-items: center;
     height: 100vh;
@@ -108,4 +108,15 @@ body {
         padding: 4px 8px;
         font-size: 12px;
     }
+}
+.home-page {
+  width: 100%;
+}
+
+/* Contenedor para la sección de Trending que permite mayor ancho */
+.trending-section-wrapper {
+  width: 100%;
+  max-width: auto;
+  margin-top: 80px;
+  padding: 0 20px;
 }
