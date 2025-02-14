@@ -7,10 +7,9 @@ const axios = require("axios");
 
 const app = express();
 const PORT = 5030;
-const SPOTIFY_CLIENT_ID = 'tu clave de cliente de spotify';
-const SPOTIFY_CLIENT_SECRET = 'tu clave secreta de spotify';
-const YOUTUBE_API_KEY = 'tu clave de api de youtube';
-
+const SPOTIFY_CLIENT_ID = 'inserte su clave aqui';
+const SPOTIFY_CLIENT_SECRET = 'inserte su clave aqui';
+const YOUTUBE_API_KEY = 'inserte su clave aqui';
 
 // Cargar certificados SSL
 const options = {
