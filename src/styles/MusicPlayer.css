@@ -1,24 +1,41 @@
 .music-player {
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
-}
-
-.album-thumbnail {
+  }
+  
+  .album-thumbnail {
     width: 50px;
     height: 50px;
     object-fit: cover;
     border-radius: 5px;
-}
-
-.control-icon {
+  }
+  
+  .control-icon {
     font-size: 20px;
     cursor: pointer;
     transition: transform 0.2s;
-}
-
-.control-icon:hover {
+  }
+  
+  .control-icon:hover {
     transform: scale(1.2);
-}
-
-.form-range {
+  }
+  
+  .form-range {
     cursor: pointer;
-}
+  }
+  
+  /* Estilos para el tooltip de compartir */
+  .share-tooltip {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0.9;
+    pointer-events: none;
+  }
+  
