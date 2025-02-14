@@ -1,0 +1,54 @@
+/* Sidebar.css */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100%;
+    background-color: #282828;
+    color: white;
+    padding: 20px;
+    z-index: 1900; /* Mayor a la search bar (1000) */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+  }
+  
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  
+  .sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+  }
+  
+  .sidebar-nav li {
+    margin-bottom: 15px;
+  }
+  
+  .sidebar-nav a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+  }
+  
+
+
+
+
+
+
+
+
+
+  

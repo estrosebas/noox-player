@@ -1,10 +1,14 @@
 .search-container {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 1000;
-    width: calc(100% - 40px);
-    max-width: 350px;
+  /* Remueve estos estilos que ya no son necesarios */
+  /* position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  width: calc(100% - 40px);
+  max-width: 350px; */
+  
+  /* Ahora la search-container se comporta como elemento flexible dentro de .top-bar */
+  width: 100%;
 }
   
 .search-bar {

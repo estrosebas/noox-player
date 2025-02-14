@@ -1,3 +1,4 @@
+// Home.tsx
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -5,7 +6,9 @@ import SearchBar from "../components/SearchBar";
 import MusicPlayer from "../components/MusicPlayer";
 import Settings from "../components/Settings";
 import Trending from "../components/Trending";
-import { FaCog } from "react-icons/fa";
+import Sidebar from "../components/Sidebar";
+import HistoryModal from "../components/HistoryModal"; // Importa el modal de historial
+import { FaCog, FaBars } from "react-icons/fa";
 import "../styles/Home.css";
 import noox from "../assets/noox.png";
 
@@ -17,8 +20,10 @@ const Home = () => {
   const [showComponents, setShowComponents] = useState(false);
   const musicPlayerRef = useRef<any>(null);
 
-  // Estados para configuración
+  // Estados para configuración, sidebar y modal de historial
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [youtubeAPI, setYoutubeAPI] = useState(true);
 
   useEffect(() => {
@@ -56,12 +61,33 @@ const Home = () => {
 
   return (
     <div className="home-page">
-      <motion.div className="text-center mt-5">
-        {/* Botón de configuración */}
-        <button className="settings-button" onClick={() => setIsSettingsOpen(true)}>
-          <FaCog />
+      {/* Sidebar con la nueva propiedad onOpenHistory */}
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+        onOpenHistory={() => setIsHistoryOpen(true)}
+      />
+
+      {/* Top Navigation Bar */}
+      <div className="top-bar">
+        <button
+          className="sidebar-toggle-btn"
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          <FaBars />
         </button>
 
+        <SearchBar fetchAudio={fetchAudio} loading={loading} youtubeAPI={youtubeAPI} />
+
+        <button
+          className="settings-button"
+          onClick={() => setIsSettingsOpen(true)}
+        >
+          <FaCog />
+        </button>
+      </div>
+
+      <motion.div className="content mt-5">
         {/* Modal de configuración */}
         <Settings 
           isOpen={isSettingsOpen} 
@@ -96,7 +122,6 @@ const Home = () => {
           </motion.div>
         ) : (
           <div className="main-content">
-            <SearchBar fetchAudio={fetchAudio} loading={loading} youtubeAPI={youtubeAPI} />
             {error && <div className="alert alert-danger mt-3">{error}</div>}
             <MusicPlayer ref={musicPlayerRef} fetchAudio={fetchAudio} />
             <div className="trending-section-wrapper">
@@ -105,6 +130,17 @@ const Home = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Modal de Historial (se renderiza en Home para que no sobrecargue el MusicPlayer) */}
+      <HistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onSongSelect={(song) => {
+          fetchAudio(song.url, song.thumbnail);
+          setIsHistoryOpen(false);
+        }}
+        // Puedes pasar un arreglo vacío; en el modal puedes cargar el historial desde localStorage o bien levantar el estado en Home
+      />
     </div>
   );
 };
