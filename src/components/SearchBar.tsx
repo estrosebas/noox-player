@@ -10,6 +10,7 @@ interface SearchBarProps {
   youtubeAPI: boolean;
 }
 
+
 const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -127,24 +128,26 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
       {isLoading && <p className="loading-text">Cargando resultados...</p>}
 
       {videos.length > 0 && (
-        <div className="video-list">
-          {videos.map((video, index) => (
-            <div
-              key={index}
-              className="video-item"
-              onClick={() => {
-                fetchAudio(urlPreset + video.id, video.thumbnail);
-                setVideos([]);
-              }}
-            >
-              <img
-                src={video.thumbnail}
-                alt={video.title}
-                className="video-thumbnail"
-              />
-              <p className="video-title">{video.title}</p>
-            </div>
-          ))}
+        <div className="video-results-container">
+          <div className="video-list">
+            {videos.map((video, index) => (
+              <div
+                key={index}
+                className="video-item"
+                onClick={() => {
+                  fetchAudio(urlPreset + video.id, video.thumbnail);
+                  setVideos([]);
+                }}
+              >
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="video-thumbnail"
+                />
+                <p className="video-title">{video.title}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

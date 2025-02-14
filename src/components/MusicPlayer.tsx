@@ -8,6 +8,7 @@ import {
   FaStepBackward,
   FaDownload,
   FaMusic,
+  FaShareAlt,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/MusicPlayer.css";
@@ -39,11 +40,13 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const [volume, setVolume] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  const [songDetails, setSongDetails] = useState<{ name: string; url: string; thumbnail: string }>({
-    name: "Esperando canción...",
-    url: "",
-    thumbnail: standbyImage,
-  });
+  const [songDetails, setSongDetails] = useState<{ name: string; url: string; thumbnail: string }>(
+    {
+      name: "Esperando canción...",
+      url: "",
+      thumbnail: standbyImage,
+    }
+  );
 
   // Estados para playlist y posición actual
   const [playlist, setPlaylist] = useState<Song[]>([]);
@@ -51,6 +54,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
 
   // Estado para mostrar el modal de Playlist
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
+  // Estado para mostrar el tooltip de compartir
+  const [shareCopied, setShareCopied] = useState(false);
 
   useImperativeHandle(ref, () => ({
     playSong: (name: string, url: string, thumbnail: string) => {
@@ -131,6 +136,19 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     }
   };
 
+  const handleShare = () => {
+    if (songDetails.url) {
+      navigator.clipboard.writeText(songDetails.url)
+        .then(() => {
+          setShareCopied(true);
+          setTimeout(() => setShareCopied(false), 2000);
+        })
+        .catch((err) => {
+          console.error("Error al copiar la URL:", err);
+        });
+    }
+  };
+
   const handleTogglePlaylist = () => {
     setIsPlaylistOpen(!isPlaylistOpen);
   };
@@ -197,8 +215,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           </div>
         </div>
 
-        {/* Controles de volumen, botón de Playlist y descarga */}
-        <div className="col-md-3 d-flex align-items-center justify-content-end">
+        {/* Controles de volumen, botones de Playlist, descarga y compartir */}
+        <div className="col-md-3 d-flex align-items-center justify-content-end position-relative">
           {volume > 0 ? <FaVolumeUp className="control-icon" /> : <FaVolumeMute className="control-icon" />}
           <input type="range" value={volume * 100} onChange={handleVolumeChange} className="form-range w-50 mx-2" />
           <button onClick={handleTogglePlaylist} className="btn btn-sm btn-outline-light ms-2">
@@ -207,10 +225,22 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           <button onClick={handleDownload} className="btn btn-sm btn-outline-light ms-2">
             <FaDownload />
           </button>
+          <button onClick={handleShare} className="btn btn-sm btn-outline-light ms-2 position-relative">
+            <FaShareAlt />
+            {shareCopied && (
+              <span className="share-tooltip">Copiado al portapapeles</span>
+            )}
+          </button>
         </div>
       </div>
 
-      <audio ref={audioRef} src={songDetails.url} onTimeUpdate={handleProgress} onLoadedMetadata={handleProgress} autoPlay />
+      <audio
+        ref={audioRef}
+        src={songDetails.url}
+        onTimeUpdate={handleProgress}
+        onLoadedMetadata={handleProgress}
+        autoPlay
+      />
 
       {/* Modal de Playlist integrado en MusicPlayer */}
       <Playlist

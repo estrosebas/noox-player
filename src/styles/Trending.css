@@ -1,54 +1,77 @@
 .trending-container {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 20px;
-}
-
-.trending-section-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #1db954;
-  margin-bottom: 10px;
-}
-
-.trending-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 15px;
-}
-
-.trending-card {
-  background: #282828;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.trending-card:hover {
-  transform: scale(1.05);
-  background: #333;
-}
-
-.trending-card-img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-}
-
-.trending-card-title {
-  padding: 8px;
-  font-size: 14px;
-  color: white;
-  text-align: center;
-}
-
-.loading-text, .error-text {
-  text-align: center;
-  color: white;
-  font-size: 14px;
-}
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+  }
+  
+  .trending-section-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1db954;
+    margin-bottom: 10px;
+    text-align: left;
+  }
+  
+  /* Grid responsivo para los items */
+  .trending-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 10px;
+  }
+  
+  .trending-item {
+    display: flex;
+    align-items: center;
+    background: #282828;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    height: 60px;
+    text-align: left;
+  }
+  
+  .trending-item:hover {
+    background: #333;
+    transform: scale(1.02);
+  }
+  
+  .trending-item-img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-right: 10px;
+  }
+  
+  .trending-item-title-container {
+    width: 220px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .trending-item-title {
+    display: inline-block;
+    white-space: nowrap;
+    color: white;
+    font-size: 16px;
+  }
+  
+  /* La animación marquee se aplica solo cuando se agrega la clase "marquee" */
+  .marquee {
+    animation: marquee var(--animation-duration) linear infinite;
+  }
+  
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-1 * var(--scroll-distance))); }
+  }
+  
+  .loading-text,
+  .error-text {
+    text-align: center;
+    color: white;
+    font-size: 14px;
+  }
+  
