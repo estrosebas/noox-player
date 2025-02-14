@@ -1,5 +1,6 @@
 .music-player {
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+    
   }
   
   .album-thumbnail {
@@ -38,4 +39,21 @@
     opacity: 0.9;
     pointer-events: none;
   }
-  
+  .volume-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+  }
+  .volume-slider {
+    position: absolute;
+    bottom: 100%; /* Aparece arriba del icono */
+    left: 50%;
+    transform: translateX(-50%);
+    background: #282828;
+    padding: 5px;
+    border: 1px solid #1db954;
+    border-radius: 5px;
+    width: 100px;
+    margin-bottom: 5px;
+    z-index: 10;
+  }

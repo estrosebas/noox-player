@@ -1,4 +1,4 @@
-import React, { useState, useRef, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useRef, forwardRef, useImperativeHandle, useEffect } from "react";
 import {
   FaPlay,
   FaPause,
@@ -14,17 +14,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/MusicPlayer.css";
 import standbyImage from "../assets/standby.png";
 import Playlist from "./Playlist";
-
-// Definimos la interfaz de Song (la misma que usamos en Playlist)
-export interface Song {
-  title: string;
-  id: string;
-  url: string;
-  thumbnail: string;
-}
+import { Song } from "./HistoryModal";
 
 interface MusicPlayerProps {
-  // Recibimos la función fetchAudio desde Home para hacer el fetch y reproducir la canción
   fetchAudio: (url: string, thumbnail: string) => void;
 }
 
@@ -38,36 +30,55 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const [currentTime, setCurrentTime] = useState("0:00");
   const [durationTime, setDurationTime] = useState("0:00");
   const [volume, setVolume] = useState(1);
+  const [showVolumeControl, setShowVolumeControl] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  const [songDetails, setSongDetails] = useState<{ name: string; url: string; thumbnail: string }>(
-    {
-      name: "Esperando canción...",
-      url: "",
-      thumbnail: standbyImage,
-    }
-  );
 
-  // Estados para playlist y posición actual
+  const [songDetails, setSongDetails] = useState<{ name: string; url: string; thumbnail: string }>({
+    name: "Esperando canción...",
+    url: "",
+    thumbnail: standbyImage,
+  });
+
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [currentSongIndex, setCurrentSongIndex] = useState<number>(-1);
 
-  // Estado para mostrar el modal de Playlist
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
-  // Estado para mostrar el tooltip de compartir
   const [shareCopied, setShareCopied] = useState(false);
+
+  // Estados para el historial (no usado directamente, ya se actualiza en localStorage)
+  const [, setSongHistory] = useState<Song[]>([]);
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem("songHistory");
+    if (storedHistory) {
+      setSongHistory(JSON.parse(storedHistory));
+    }
+  }, []);
+
+  // Función para agregar canción al historial (lee y actualiza directamente localStorage)
+  const addSongToHistory = (name: string, url: string, thumbnail: string) => {
+    const newSong: Song = {
+      title: name,
+      id: Date.now().toString(),
+      url,
+      thumbnail,
+    };
+    const stored = localStorage.getItem("songHistory");
+    const history: Song[] = stored ? JSON.parse(stored) : [];
+    const updated = [newSong, ...history];
+    localStorage.setItem("songHistory", JSON.stringify(updated));
+  };
 
   useImperativeHandle(ref, () => ({
     playSong: (name: string, url: string, thumbnail: string) => {
       if (!name || !url) {
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
+        if (audioRef.current) audioRef.current.pause();
         setIsPlaying(false);
         return;
       }
       setSongDetails({ name, url, thumbnail });
       setIsPlaying(true);
+      addSongToHistory(name, url, thumbnail);
       if (audioRef.current) {
         audioRef.current.src = url;
         audioRef.current.play();
@@ -90,10 +101,12 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     if (!audioRef.current) return;
     const { currentTime, duration } = audioRef.current;
     setProgress((currentTime / duration) * 100);
-    
+
     const formatTime = (time: number) => {
       const minutes = Math.floor(time / 60);
-      const seconds = Math.floor(time % 60).toString().padStart(2, "0");
+      const seconds = Math.floor(time % 60)
+        .toString()
+        .padStart(2, "0");
       return `${minutes}:${seconds}`;
     };
 
@@ -119,8 +132,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const handleDownload = async () => {
     if (!songDetails.url) return;
     try {
-      const downloadUrl = songDetails.url;
-      const response = await fetch(downloadUrl);
+      const response = await fetch(songDetails.url);
       if (!response.ok) throw new Error("Error al descargar el archivo");
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -138,14 +150,13 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
 
   const handleShare = () => {
     if (songDetails.url) {
-      navigator.clipboard.writeText(songDetails.url)
+      navigator.clipboard
+        .writeText(songDetails.url)
         .then(() => {
           setShareCopied(true);
           setTimeout(() => setShareCopied(false), 2000);
         })
-        .catch((err) => {
-          console.error("Error al copiar la URL:", err);
-        });
+        .catch((err) => console.error("Error al copiar la URL:", err));
     }
   };
 
@@ -153,24 +164,18 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     setIsPlaylistOpen(!isPlaylistOpen);
   };
 
-  // Función que se ejecuta cuando se selecciona una canción desde el modal Playlist
   const handleSongSelect = (song: Song, fullPlaylist: Song[]) => {
-    // Guardamos el playlist completo y el índice de la canción seleccionada
     setPlaylist(fullPlaylist);
     const index = fullPlaylist.findIndex((s) => s.id === song.id);
     setCurrentSongIndex(index);
-    // Usamos fetchAudio para obtener y reproducir la canción
     props.fetchAudio(song.url, song.thumbnail);
     setIsPlaylistOpen(false);
   };
 
-  // Funciones para pasar a la siguiente o anterior canción
   const handleNextSong = () => {
     if (playlist.length === 0) return;
     let nextIndex = currentSongIndex + 1;
-    if (nextIndex >= playlist.length) {
-      nextIndex = 0; // Opcional: hacer loop
-    }
+    if (nextIndex >= playlist.length) nextIndex = 0;
     setCurrentSongIndex(nextIndex);
     const nextSong = playlist[nextIndex];
     props.fetchAudio(nextSong.url, nextSong.thumbnail);
@@ -179,9 +184,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const handlePrevSong = () => {
     if (playlist.length === 0) return;
     let prevIndex = currentSongIndex - 1;
-    if (prevIndex < 0) {
-      prevIndex = playlist.length - 1; // Opcional: hacer loop
-    }
+    if (prevIndex < 0) prevIndex = playlist.length - 1;
     setCurrentSongIndex(prevIndex);
     const prevSong = playlist[prevIndex];
     props.fetchAudio(prevSong.url, prevSong.thumbnail);
@@ -190,11 +193,13 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   return (
     <div className="music-player container-fluid fixed-bottom bg-dark text-white py-2">
       <div className="row align-items-center">
-        {/* Thumbnail + Título */}
+        {/* Thumbnail y Título */}
         <div className="col-md-3 d-flex align-items-center">
           <img src={songDetails.thumbnail} alt="Album Cover" className="album-thumbnail me-2" />
           <div>
-            <p className="m-0 fw-bold text-truncate" style={{ maxWidth: "200px" }}>{songDetails.name}</p>
+            <p className="m-0 fw-bold text-truncate" style={{ maxWidth: "200px" }}>
+              {songDetails.name}
+            </p>
             <p className="m-0 text-secondary small">Artista desconocido</p>
           </div>
         </div>
@@ -215,10 +220,27 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           </div>
         </div>
 
-        {/* Controles de volumen, botones de Playlist, descarga y compartir */}
+        {/* Controles de volumen y botones adicionales */}
+        {/* Controles de volumen y botones adicionales */}
         <div className="col-md-3 d-flex align-items-center justify-content-end position-relative">
-          {volume > 0 ? <FaVolumeUp className="control-icon" /> : <FaVolumeMute className="control-icon" />}
-          <input type="range" value={volume * 100} onChange={handleVolumeChange} className="form-range w-50 mx-2" />
+          <div className="volume-btn-container">
+            <button
+              onClick={() => setShowVolumeControl(!showVolumeControl)}
+              className="btn btn-sm btn-outline-light ms-2"
+            >
+              {volume > 0 ? <FaVolumeUp className="control-icon" /> : <FaVolumeMute className="control-icon" />}
+            </button>
+            {showVolumeControl && (
+              <div className="volume-slider">
+                <input
+                  type="range"
+                  value={volume * 100}
+                  onChange={handleVolumeChange}
+                  className="form-range"
+                />
+              </div>
+            )}
+          </div>
           <button onClick={handleTogglePlaylist} className="btn btn-sm btn-outline-light ms-2">
             <FaMusic />
           </button>
@@ -242,12 +264,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         autoPlay
       />
 
-      {/* Modal de Playlist integrado en MusicPlayer */}
-      <Playlist
-        isOpen={isPlaylistOpen}
-        onClose={handleTogglePlaylist}
-        onSongSelect={handleSongSelect}
-      />
+      {/* Modal de Playlist */}
+      <Playlist isOpen={isPlaylistOpen} onClose={handleTogglePlaylist} onSongSelect={handleSongSelect} />
     </div>
   );
 });

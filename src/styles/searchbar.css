@@ -1,10 +1,6 @@
 .search-container {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 1000;
-    width: calc(100% - 40px);
-    max-width: 350px;
+  position: relative;
+  width: 100%;
 }
   
 .search-bar {
@@ -85,6 +81,7 @@
 }
   
 .video-results-container {
+  position: absolute;
     background: #282828;
     border: 1px solid #1db954;
     border-radius: 10px;

@@ -1,11 +1,14 @@
+// Home.tsx
 import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import SearchBar from "../components/SearchBar";
 import MusicPlayer from "../components/MusicPlayer";
 import Settings from "../components/Settings";
 import Trending from "../components/Trending";
-import { FaCog } from "react-icons/fa";
+import Sidebar from "../components/Sidebar";
+import HistoryModal from "../components/HistoryModal"; // Modal de historial
+import { FaBars } from "react-icons/fa";
 import "../styles/Home.css";
 import noox from "../assets/noox.png";
 
@@ -17,8 +20,10 @@ const Home = () => {
   const [showComponents, setShowComponents] = useState(false);
   const musicPlayerRef = useRef<any>(null);
 
-  // Estados para configuración
+  // Estados para configuración, sidebar y modales
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [youtubeAPI, setYoutubeAPI] = useState(true);
 
   useEffect(() => {
@@ -37,10 +42,8 @@ const Home = () => {
       const response = await axios.get(
         `https://noox.ooguy.com:5030/search?url=${encodeURIComponent(url)}`
       );
-      
       setAudioData({ title: response.data.title, audioUrl: response.data.audioUrl });
       setCurrentThumbnail(thumbnail);
-      
       musicPlayerRef.current?.playSong(
         response.data.title,
         response.data.audioUrl,
@@ -56,55 +59,69 @@ const Home = () => {
 
   return (
     <div className="home-page">
-      <motion.div className="text-center mt-5">
-        {/* Botón de configuración */}
-        <button className="settings-button" onClick={() => setIsSettingsOpen(true)}>
-          <FaCog />
-        </button>
-
-        {/* Modal de configuración */}
-        <Settings 
-          isOpen={isSettingsOpen} 
-          onClose={() => setIsSettingsOpen(false)} 
-          youtubeAPI={youtubeAPI} 
-          onToggleYouTubeAPI={setYoutubeAPI} 
-        />
-
-        {!showComponents ? (
+      <AnimatePresence>
+        { !showComponents && (
           <motion.div
+            className="splash-screen"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 1.5 }}
-            className="intro"
           >
-            <motion.h1
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1.5 }}
-              className="mb-4 titulop"
-            >
-              Noox Player
-            </motion.h1>
-            <motion.img
-              src={noox}
-              alt="noox-logo"
-              className="noox-logo"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1.5 }}
-            />
+            <motion.h1 className="titulop">Noox Player</motion.h1>
+            <motion.img src={noox} alt="noox-logo" className="noox-logo" />
           </motion.div>
-        ) : (
-          <div className="main-content">
+        )}
+      </AnimatePresence>
+
+      { showComponents && (
+        <>
+          {/* Sidebar con funciones para abrir historial y configuración */}
+          <Sidebar 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)}
+            onOpenHistory={() => setIsHistoryOpen(true)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+
+          {/* Top Navigation Bar */}
+          <div className="top-bar">
+            <button
+              className="sidebar-toggle-btn"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <FaBars />
+            </button>
             <SearchBar fetchAudio={fetchAudio} loading={loading} youtubeAPI={youtubeAPI} />
+          </div>
+
+          <div className="content mt-5">
+            {/* Modal de configuración */}
+            <Settings 
+              isOpen={isSettingsOpen} 
+              onClose={() => setIsSettingsOpen(false)} 
+              youtubeAPI={youtubeAPI} 
+              onToggleYouTubeAPI={setYoutubeAPI} 
+            />
+
             {error && <div className="alert alert-danger mt-3">{error}</div>}
             <MusicPlayer ref={musicPlayerRef} fetchAudio={fetchAudio} />
             <div className="trending-section-wrapper">
               <Trending fetchAudio={fetchAudio} />
             </div>
           </div>
-        )}
-      </motion.div>
+
+          {/* Modal de Historial */}
+          <HistoryModal
+            isOpen={isHistoryOpen}
+            onClose={() => setIsHistoryOpen(false)}
+            onSongSelect={(song) => {
+              fetchAudio(song.url, song.thumbnail);
+              setIsHistoryOpen(false);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
