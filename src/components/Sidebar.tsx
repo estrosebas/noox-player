@@ -7,7 +7,8 @@ import '../styles/Sidebar.css';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenHistory: () => void; // Nueva propiedad para abrir el modal de historial
+  onOpenHistory: () => void; // Para abrir el modal de historial
+  onOpenSettings: () => void; // Para abrir el modal de configuración
 }
 
 const sidebarVariants = {
@@ -29,7 +30,7 @@ const sidebarVariants = {
   },
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory, onOpenSettings }) => {
   return (
     <motion.div
       className="sidebar"
@@ -45,9 +46,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory }) => 
       </div>
       <nav className="sidebar-nav">
         <ul>
-          <li><a href="#">Inicio</a></li>
-          <li><a href="#">Perfil</a></li>
-          {/* Ítem que dispara el modal de historial */}
+          <li>
+            <a href="#">Inicio</a>
+          </li>
+          <li>
+            <a href="#">Perfil</a>
+          </li>
+          
+          {/* Ítem para abrir historial */}
           <li>
             <a
               href="#"
@@ -60,7 +66,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory }) => 
               Historial
             </a>
           </li>
-          <li><a href="#">Ayuda</a></li>
+          {/* Ítem para abrir configuración */}
+          <li>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenSettings();
+                onClose();
+              }}
+            >
+              Configuración
+            </a>
+          </li>
+          <li>
+            <a href="#">Ayuda</a>
+          </li>
         </ul>
       </nav>
     </motion.div>

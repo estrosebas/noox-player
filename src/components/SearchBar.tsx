@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../styles/SearchBar.css";
 import axios from "axios";
 import { FaSearch } from "react-icons/fa";
@@ -10,7 +10,6 @@ interface SearchBarProps {
   youtubeAPI: boolean;
 }
 
-
 const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -19,6 +18,9 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const urlPreset = "https://www.youtube.com/watch?v=";
 
+  // Ref para el contenedor de búsqueda
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (query.length >= 3 && !userSelected) {
       fetchSuggestions(query);
@@ -26,6 +28,33 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
       setSuggestions([]);
     }
   }, [query]);
+
+  // Listener para cerrar sugerencias al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setSuggestions([]);
+        // Opcional: también puedes limpiar videos si lo deseas:
+        // setVideos([]);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSuggestions([]);
+        // Opcional: también puedes limpiar videos si lo deseas:
+        // setVideos([]);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const fetchSuggestions = async (searchTerm: string) => {
     try {
@@ -85,7 +114,7 @@ const SearchBar = ({ fetchAudio, loading, youtubeAPI }: SearchBarProps) => {
   };
 
   return (
-    <div className="search-container">
+    <div className="search-container" ref={containerRef}>
       <div className="search-bar">
         <div className="search-icon-container">
           <FaSearch className="search-icon" />

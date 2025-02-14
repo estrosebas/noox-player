@@ -9,15 +9,12 @@ import {
   FaDownload,
   FaMusic,
   FaShareAlt,
-  FaHistory,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/MusicPlayer.css";
 import standbyImage from "../assets/standby.png";
 import Playlist from "./Playlist";
 import { Song } from "./HistoryModal";
-
-
 
 interface MusicPlayerProps {
   fetchAudio: (url: string, thumbnail: string) => void;
@@ -33,6 +30,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const [currentTime, setCurrentTime] = useState("0:00");
   const [durationTime, setDurationTime] = useState("0:00");
   const [volume, setVolume] = useState(1);
+  const [showVolumeControl, setShowVolumeControl] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [songDetails, setSongDetails] = useState<{ name: string; url: string; thumbnail: string }>({
@@ -47,11 +45,9 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
-  // Estados para el historial
+  // Estados para el historial (no usado directamente, ya se actualiza en localStorage)
   const [, setSongHistory] = useState<Song[]>([]);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-  // Cargar historial desde localStorage al montar
   useEffect(() => {
     const storedHistory = localStorage.getItem("songHistory");
     if (storedHistory) {
@@ -59,7 +55,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     }
   }, []);
 
-  // Función para agregar canción al historial
+  // Función para agregar canción al historial (lee y actualiza directamente localStorage)
   const addSongToHistory = (name: string, url: string, thumbnail: string) => {
     const newSong: Song = {
       title: name,
@@ -67,10 +63,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
       url,
       thumbnail,
     };
-    // Leer el historial actual desde localStorage (si existe)
     const stored = localStorage.getItem("songHistory");
     const history: Song[] = stored ? JSON.parse(stored) : [];
-    // Actualizar el historial agregando la nueva canción al inicio
     const updated = [newSong, ...history];
     localStorage.setItem("songHistory", JSON.stringify(updated));
   };
@@ -78,15 +72,12 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   useImperativeHandle(ref, () => ({
     playSong: (name: string, url: string, thumbnail: string) => {
       if (!name || !url) {
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
+        if (audioRef.current) audioRef.current.pause();
         setIsPlaying(false);
         return;
       }
       setSongDetails({ name, url, thumbnail });
       setIsPlaying(true);
-      // Agregar al historial cada vez que se reproduce una canción
       addSongToHistory(name, url, thumbnail);
       if (audioRef.current) {
         audioRef.current.src = url;
@@ -141,8 +132,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const handleDownload = async () => {
     if (!songDetails.url) return;
     try {
-      const downloadUrl = songDetails.url;
-      const response = await fetch(downloadUrl);
+      const response = await fetch(songDetails.url);
       if (!response.ok) throw new Error("Error al descargar el archivo");
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -166,18 +156,12 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           setShareCopied(true);
           setTimeout(() => setShareCopied(false), 2000);
         })
-        .catch((err) => {
-          console.error("Error al copiar la URL:", err);
-        });
+        .catch((err) => console.error("Error al copiar la URL:", err));
     }
   };
 
   const handleTogglePlaylist = () => {
     setIsPlaylistOpen(!isPlaylistOpen);
-  };
-
-  const handleToggleHistory = () => {
-    setIsHistoryOpen(!isHistoryOpen);
   };
 
   const handleSongSelect = (song: Song, fullPlaylist: Song[]) => {
@@ -191,9 +175,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const handleNextSong = () => {
     if (playlist.length === 0) return;
     let nextIndex = currentSongIndex + 1;
-    if (nextIndex >= playlist.length) {
-      nextIndex = 0;
-    }
+    if (nextIndex >= playlist.length) nextIndex = 0;
     setCurrentSongIndex(nextIndex);
     const nextSong = playlist[nextIndex];
     props.fetchAudio(nextSong.url, nextSong.thumbnail);
@@ -202,9 +184,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const handlePrevSong = () => {
     if (playlist.length === 0) return;
     let prevIndex = currentSongIndex - 1;
-    if (prevIndex < 0) {
-      prevIndex = playlist.length - 1;
-    }
+    if (prevIndex < 0) prevIndex = playlist.length - 1;
     setCurrentSongIndex(prevIndex);
     const prevSong = playlist[prevIndex];
     props.fetchAudio(prevSong.url, prevSong.thumbnail);
@@ -217,7 +197,9 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         <div className="col-md-3 d-flex align-items-center">
           <img src={songDetails.thumbnail} alt="Album Cover" className="album-thumbnail me-2" />
           <div>
-            <p className="m-0 fw-bold text-truncate" style={{ maxWidth: "200px" }}>{songDetails.name}</p>
+            <p className="m-0 fw-bold text-truncate" style={{ maxWidth: "200px" }}>
+              {songDetails.name}
+            </p>
             <p className="m-0 text-secondary small">Artista desconocido</p>
           </div>
         </div>
@@ -239,9 +221,26 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         </div>
 
         {/* Controles de volumen y botones adicionales */}
+        {/* Controles de volumen y botones adicionales */}
         <div className="col-md-3 d-flex align-items-center justify-content-end position-relative">
-          {volume > 0 ? <FaVolumeUp className="control-icon" /> : <FaVolumeMute className="control-icon" />}
-          <input type="range" value={volume * 100} onChange={handleVolumeChange} className="form-range w-50 mx-2" />
+          <div className="volume-btn-container">
+            <button
+              onClick={() => setShowVolumeControl(!showVolumeControl)}
+              className="btn btn-sm btn-outline-light ms-2"
+            >
+              {volume > 0 ? <FaVolumeUp className="control-icon" /> : <FaVolumeMute className="control-icon" />}
+            </button>
+            {showVolumeControl && (
+              <div className="volume-slider">
+                <input
+                  type="range"
+                  value={volume * 100}
+                  onChange={handleVolumeChange}
+                  className="form-range"
+                />
+              </div>
+            )}
+          </div>
           <button onClick={handleTogglePlaylist} className="btn btn-sm btn-outline-light ms-2">
             <FaMusic />
           </button>
@@ -253,10 +252,6 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
             {shareCopied && (
               <span className="share-tooltip">Copiado al portapapeles</span>
             )}
-          </button>
-          {/* Botón para abrir el historial */}
-          <button onClick={handleToggleHistory} className="btn btn-sm btn-outline-light ms-2">
-            <FaHistory />
           </button>
         </div>
       </div>
@@ -270,14 +265,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
       />
 
       {/* Modal de Playlist */}
-      <Playlist
-        isOpen={isPlaylistOpen}
-        onClose={handleTogglePlaylist}
-        onSongSelect={handleSongSelect}
-      />
-
-      {/* Modal de Historial */}
-      
+      <Playlist isOpen={isPlaylistOpen} onClose={handleTogglePlaylist} onSongSelect={handleSongSelect} />
     </div>
   );
 });
