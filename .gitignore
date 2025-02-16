@@ -13,6 +13,12 @@ android
 dist-ssr
 *.local
 
+src-tauri
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/tauri.conf.json
+
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -15,6 +15,9 @@ import "../styles/MusicPlayer.css";
 import standbyImage from "../assets/standby.png";
 import Playlist from "./Playlist";
 import { Song } from "./HistoryModal";
+import { Capacitor,  } from '@capacitor/core';
+import NooxDownloader from "../plugins/NooxDownloader";
+
 
 interface MusicPlayerProps {
   fetchAudio: (url: string, thumbnail: string) => void;
@@ -131,23 +134,45 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
 
   const handleDownload = async () => {
     if (!songDetails.url) return;
+  
     try {
       const response = await fetch(songDetails.url);
       if (!response.ok) throw new Error("Error al descargar el archivo");
       const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `${songDetails.name}.mp3`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
+  
+      if (Capacitor.getPlatform() === "web") {
+        // 🖥 Método para Web/Tauri
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `${songDetails.name}.mp3`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      } else {
+        // 📱 Método para Android/iOS con Capacitor
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+  
+          try {
+            await NooxDownloader.download({
+              url: songDetails.url,
+              fileName: `${songDetails.name}.mp3`,
+            });
+            alert("Descarga iniciada...");
+          } catch (fsError) {
+            console.error("Error guardando el archivo:", fsError);
+            alert("Error guardando el archivo.");
+          }
+        };
+      }
     } catch (error) {
       console.error("Error en la descarga:", error);
+      alert("Error en la descarga.");
     }
   };
-
   const handleShare = () => {
     if (songDetails.url) {
       navigator.clipboard
