@@ -17,6 +17,7 @@ import Playlist from "./Playlist";
 import { Song } from "./HistoryModal";
 import { Capacitor,  } from '@capacitor/core';
 import NooxDownloader from "../plugins/NooxDownloader";
+import Swal from "sweetalert2";
 
 
 interface MusicPlayerProps {
@@ -141,7 +142,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
       const blob = await response.blob();
   
       if (Capacitor.getPlatform() === "web") {
-        // 🖥 Método para Web/Tauri
+        // Método para Web/Tauri
         const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = blobUrl;
@@ -150,27 +151,64 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
+  
+        Swal.fire({
+          icon: "success",
+          title: "Descarga iniciada",
+          showConfirmButton: false,
+          timer: 1500,
+          background: "linear-gradient(to right, #141e30, #243b55)",
+          customClass: {
+            popup: "custom-swal-popup"
+          }
+        });
       } else {
-        // 📱 Método para Android/iOS con Capacitor
+        // Método para Android/iOS con Capacitor
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
-  
           try {
             await NooxDownloader.download({
               url: songDetails.url,
               fileName: `${songDetails.name}.mp3`,
             });
-            alert("Descarga iniciada...");
+            Swal.fire({
+              icon: "success",
+              title: "Descarga iniciada",
+              showConfirmButton: false,
+              timer: 1500,
+              background: "linear-gradient(to right, #141e30, #243b55)",
+              customClass: {
+                popup: "custom-swal-popup"
+              }
+            });
           } catch (fsError) {
             console.error("Error guardando el archivo:", fsError);
-            alert("Error guardando el archivo.");
+            Swal.fire({
+              icon: "error",
+              title: "Error guardando el archivo",
+              showConfirmButton: false,
+              timer: 1500,
+              background: "linear-gradient(to right, #141e30, #243b55)",
+              customClass: {
+                popup: "custom-swal-popup"
+              }
+            });
           }
         };
       }
     } catch (error) {
       console.error("Error en la descarga:", error);
-      alert("Error en la descarga.");
+      Swal.fire({
+        icon: "error",
+        title: "Error en la descarga",
+        showConfirmButton: false,
+        timer: 1500,
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
+      });
     }
   };
   const handleShare = () => {
