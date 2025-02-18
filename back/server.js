@@ -664,6 +664,30 @@ app.get("/api/playlists-by-user/:usuario_id", async (req, res) => {
   }
 });
 
+app.get("/api/songsbyplaylist/:playlistId", async (req, res) => {
+  const { playlistId } = req.params;
+  try {
+    // Realizamos el inner join entre 'canciones' y 'playlists'
+    const [rows] = await pool.query(
+      `SELECT 
+         c.cancion_id, 
+         c.nombre, 
+         c.url_cancion, 
+         c.url_thumbnail, 
+         p.nombre AS playlist_name
+       FROM canciones c
+       INNER JOIN playlists p ON c.playlist_id = p.playlist_id
+       WHERE c.playlist_id = ?`,
+      [playlistId]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener las canciones:", error);
+    res.status(500).json({ error: "Error al obtener las canciones." });
+  }
+});
+
 // Crear el servidor HTTPS
 https.createServer(options, app).listen(PORT, () => {
   console.log(`Servidor corriendo en https://noox.ooguy.com:${PORT}`);

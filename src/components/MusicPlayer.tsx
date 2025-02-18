@@ -9,6 +9,8 @@ import {
   FaDownload,
   FaMusic,
   FaShareAlt,
+  FaPlus,
+  FaTimes
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/MusicPlayer.css";
@@ -18,18 +20,30 @@ import { Song } from "./HistoryModal";
 import { Capacitor } from "@capacitor/core";
 import NooxDownloader from "../plugins/NooxDownloader";
 import Swal from "sweetalert2";
-// Importamos el plugin
 import { CapacitorMusicControls } from "capacitor-music-controls-plugin";
+import Modal from "react-modal";
+import axios from "axios";
+import Cookies from "js-cookie";
+
+// Interfaz para las playlists (para el modal "Agregar a Playlist")
+interface PlaylistItem {
+  playlist_id: number;
+  nombre: string;
+  descripcion: string;
+  usuario_id: number;
+  fecha_creacion: string;
+}
+
+export interface MusicPlayerRef {
+  playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string) => void;
+}
 
 interface MusicPlayerProps {
   fetchAudio: (url: string, thumbnail: string) => void;
 }
 
-export interface MusicPlayerRef {
-  playSong: (name: string, url: string, thumbnail: string) => void;
-}
-
 const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) => {
+  // Estados de reproducción y audio
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState("0:00");
@@ -38,12 +52,19 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const [songDetails, setSongDetails] = useState<{ name: string; url: string; thumbnail: string }>({
+  // Ahora songDetails incluye youtubeUrl (la URL que se usará para almacenar la canción en la playlist)
+  const [songDetails, setSongDetails] = useState<{ 
+    name: string; 
+    url: string; 
+    thumbnail: string; 
+    youtubeUrl: string; 
+  }>({
     name: "Esperando canción...",
     url: "",
     thumbnail: standbyImage,
+    youtubeUrl: "",
   });
-  
+
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [currentSongIndex, setCurrentSongIndex] = useState<number>(-1);
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
@@ -59,7 +80,6 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     }
   }, []);
 
-  // Función para agregar canción al historial (actualiza localStorage)
   const addSongToHistory = (name: string, url: string, thumbnail: string) => {
     const newSong: Song = {
       title: name,
@@ -73,7 +93,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     localStorage.setItem("songHistory", JSON.stringify(updated));
   };
 
-  // Función para actualizar la notificación del reproductor usando CapacitorMusicControls
+  // Actualización de notificación con CapacitorMusicControls
   const updateMusicNotification = () => {
     if (Capacitor.getPlatform() !== "web") {
       const coverUrl = songDetails.thumbnail ? songDetails.thumbnail : "";
@@ -92,9 +112,9 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         prevIcon: "media_prev",
         nextIcon: "media_next",
         closeIcon: "media_close",
-        notificationIcon: "notification"
+        notificationIcon: "notification",
       };
-  
+
       CapacitorMusicControls.create(options)
         .then(() => {
           // Notificación creada correctamente
@@ -104,11 +124,10 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         });
     }
   };
-  
+
   useEffect(() => {
     const handleControlsEvent = (action: any) => {
       console.log("controlsNotification event:", action);
-      // El mensaje de la acción viene en action.message
       switch (action.message) {
         case "music-controls-play":
           if (!isPlaying) togglePlayPause();
@@ -123,35 +142,29 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           handlePrevSong();
           break;
         case "music-controls-destroy":
-          // Opcional: manejar cuando se destruye la notificación
           break;
         default:
           break;
       }
     };
-  
+
     if (Capacitor.getPlatform() === "android") {
-      // En Android (y con Capacitor 4 en adelante), se recomienda usar document.addEventListener
       document.addEventListener("controlsNotification", (event: any) => {
-        // En algunos casos, el objeto event ya es la acción.
         handleControlsEvent(event);
       });
-    } 
+    }
   }, [isPlaying, songDetails]);
 
-  // Actualizamos la notificación al cambiar los detalles de la canción
   useEffect(() => {
     updateMusicNotification();
   }, [songDetails]);
 
-  // Actualizamos la notificación cuando cambia el estado de reproducción
   useEffect(() => {
     if (Capacitor.getPlatform() !== "web") {
       CapacitorMusicControls.updateIsPlaying({ isPlaying });
     }
   }, [isPlaying]);
 
-  // Limpiar la notificación al desmontar el componente
   useEffect(() => {
     return () => {
       if (Capacitor.getPlatform() !== "web") {
@@ -161,14 +174,15 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     };
   }, []);
 
+  // Se modifica playSong para recibir también youtubeUrl (que se almacenará)
   useImperativeHandle(ref, () => ({
-    playSong: (name: string, url: string, thumbnail: string) => {
+    playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string) => {
       if (!name || !url) {
         if (audioRef.current) audioRef.current.pause();
         setIsPlaying(false);
         return;
       }
-      setSongDetails({ name, url, thumbnail });
+      setSongDetails({ name, url, thumbnail, youtubeUrl });
       setIsPlaying(true);
       addSongToHistory(name, url, thumbnail);
       if (audioRef.current) {
@@ -196,9 +210,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
 
     const formatTime = (time: number) => {
       const minutes = Math.floor(time / 60);
-      const seconds = Math.floor(time % 60)
-        .toString()
-        .padStart(2, "0");
+      const seconds = Math.floor(time % 60).toString().padStart(2, "0");
       return `${minutes}:${seconds}`;
     };
 
@@ -223,12 +235,12 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
 
   const handleDownload = async () => {
     if (!songDetails.url) return;
-  
+
     try {
       const response = await fetch(songDetails.url);
       if (!response.ok) throw new Error("Error al descargar el archivo");
       const blob = await response.blob();
-  
+
       if (Capacitor.getPlatform() === "web") {
         const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -238,7 +250,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
-  
+
         Swal.fire({
           icon: "success",
           title: "Descarga iniciada",
@@ -246,8 +258,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           timer: 1500,
           background: "linear-gradient(to right, #141e30, #243b55)",
           customClass: {
-            popup: "custom-swal-popup"
-          }
+            popup: "custom-swal-popup",
+          },
         });
       } else {
         const reader = new FileReader();
@@ -265,8 +277,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
               timer: 1500,
               background: "linear-gradient(to right, #141e30, #243b55)",
               customClass: {
-                popup: "custom-swal-popup"
-              }
+                popup: "custom-swal-popup",
+              },
             });
           } catch (fsError) {
             console.error("Error guardando el archivo:", fsError);
@@ -277,8 +289,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
               timer: 1500,
               background: "linear-gradient(to right, #141e30, #243b55)",
               customClass: {
-                popup: "custom-swal-popup"
-              }
+                popup: "custom-swal-popup",
+              },
             });
           }
         };
@@ -292,8 +304,8 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         timer: 1500,
         background: "linear-gradient(to right, #141e30, #243b55)",
         customClass: {
-          popup: "custom-swal-popup"
-        }
+          popup: "custom-swal-popup",
+        },
       });
     }
   };
@@ -311,7 +323,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
   };
 
   useEffect(() => {
-    if ('mediaSession' in navigator) {
+    if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: songDetails.name,
         artist: "Artista desconocido",
@@ -322,35 +334,27 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           { src: songDetails.thumbnail, sizes: "192x192", type: "image/png" },
           { src: songDetails.thumbnail, sizes: "256x256", type: "image/png" },
           { src: songDetails.thumbnail, sizes: "384x384", type: "image/png" },
-          { src: songDetails.thumbnail, sizes: "512x512", type: "image/png" }
-        ]
+          { src: songDetails.thumbnail, sizes: "512x512", type: "image/png" },
+        ],
       });
-  
-      navigator.mediaSession.setActionHandler('play', () => {
+
+      navigator.mediaSession.setActionHandler("play", () => {
         if (!isPlaying) togglePlayPause();
       });
-      navigator.mediaSession.setActionHandler('pause', () => {
+      navigator.mediaSession.setActionHandler("pause", () => {
         if (isPlaying) togglePlayPause();
       });
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
+      navigator.mediaSession.setActionHandler("nexttrack", () => {
         handleNextSong();
       });
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
+      navigator.mediaSession.setActionHandler("previoustrack", () => {
         handlePrevSong();
       });
     }
   }, [songDetails, isPlaying]);
-  
+
   const handleTogglePlaylist = () => {
     setIsPlaylistOpen(!isPlaylistOpen);
-  };
-
-  const handleSongSelect = (song: Song, fullPlaylist: Song[]) => {
-    setPlaylist(fullPlaylist);
-    const index = fullPlaylist.findIndex((s) => s.id === song.id);
-    setCurrentSongIndex(index);
-    props.fetchAudio(song.url, song.thumbnail);
-    setIsPlaylistOpen(false);
   };
 
   const handleNextSong = () => {
@@ -371,10 +375,80 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     props.fetchAudio(prevSong.url, prevSong.thumbnail);
   };
 
+  // ========= NUEVA FUNCIONALIDAD: AGREGAR A PLAYLIST ========= //
+
+  // Estados para el modal "Agregar a Playlist"
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addModalPlaylists, setAddModalPlaylists] = useState<PlaylistItem[]>([]);
+  const [loadingAdd, setLoadingAdd] = useState(false);
+  const [errorAdd, setErrorAdd] = useState("");
+
+  // Función para abrir el modal y cargar las playlists del usuario
+  const handleOpenAddModal = async () => {
+    setErrorAdd("");
+    setLoadingAdd(true);
+    setIsAddModalOpen(true);
+    try {
+      const sessionCookie = Cookies.get("session");
+      if (!sessionCookie) {
+        setErrorAdd("No hay sesión activa.");
+        setLoadingAdd(false);
+        return;
+      }
+      const userData = JSON.parse(sessionCookie);
+      const response = await axios.get(
+        `https://noox.ooguy.com:5030/api/playlists-by-user/${userData.usuario_id}`
+      );
+      setAddModalPlaylists(response.data);
+    } catch (err) {
+      setErrorAdd("Error al cargar tus playlists.");
+    } finally {
+      setLoadingAdd(false);
+    }
+  };
+
+  // Función para agregar la canción actual a la playlist seleccionada
+  const handleAddSongToPlaylist = async (playlistId: number) => {
+    try {
+      await axios.post("https://noox.ooguy.com:5030/api/canciones", {
+        nombre: songDetails.name,
+        // Usamos songDetails.youtubeUrl, que ahora Home debe pasar correctamente,
+        // en lugar de la URL de streaming
+        url_cancion: songDetails.youtubeUrl, 
+        url_thumbnail: songDetails.thumbnail,
+        playlist_id: playlistId,
+      });
+      Swal.fire({
+        icon: "success",
+        title: "Canción agregada a la playlist",
+        showConfirmButton: false,
+        timer: 1500,
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup",
+        },
+      });
+      setIsAddModalOpen(false);
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error al agregar la canción",
+        showConfirmButton: false,
+        timer: 1500,
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup",
+        },
+      });
+    }
+  };
+
+  // ========================================================== //
+
   return (
     <div className="music-player container-fluid fixed-bottom bg-dark text-white py-2">
       <div className="row align-items-center">
-        {/* Thumbnail y Título */}
+        {/* Thumbnail y Título con botón (+) para agregar a playlist */}
         <div className="col-md-3 d-flex align-items-center">
           <img src={songDetails.thumbnail} alt="Album Cover" className="album-thumbnail me-2" />
           <div>
@@ -404,20 +478,20 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         {/* Controles de volumen y botones adicionales */}
         <div className="col-md-3 d-flex align-items-center justify-content-end position-relative">
           <div className="volume-btn-container">
+            {/* Botón para abrir el modal "Agregar a Playlist" */}
             <button
-              onClick={() => setShowVolumeControl(!showVolumeControl)}
               className="btn btn-sm btn-outline-light ms-2"
+              onClick={handleOpenAddModal}
+              title="Agregar a Playlist"
             >
+              <FaPlus />
+            </button>
+            <button onClick={() => setShowVolumeControl(!showVolumeControl)} className="btn btn-sm btn-outline-light ms-2">
               {volume > 0 ? <FaVolumeUp className="control-icon" /> : <FaVolumeMute className="control-icon" />}
             </button>
             {showVolumeControl && (
               <div className="volume-slider">
-                <input
-                  type="range"
-                  value={volume * 100}
-                  onChange={handleVolumeChange}
-                  className="form-range"
-                />
+                <input type="range" value={volume * 100} onChange={handleVolumeChange} className="form-range" />
               </div>
             )}
           </div>
@@ -429,23 +503,60 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           </button>
           <button onClick={handleShare} className="btn btn-sm btn-outline-light ms-2 position-relative">
             <FaShareAlt />
-            {shareCopied && (
-              <span className="share-tooltip">Copiado al portapapeles</span>
-            )}
+            {shareCopied && <span className="share-tooltip">Copiado al portapapeles</span>}
           </button>
         </div>
       </div>
 
-      <audio
-        ref={audioRef}
-        src={songDetails.url}
-        onTimeUpdate={handleProgress}
-        onLoadedMetadata={handleProgress}
-        autoPlay
-      />
+      <audio ref={audioRef} src={songDetails.url} onTimeUpdate={handleProgress} onLoadedMetadata={handleProgress} autoPlay />
 
-      {/* Modal de Playlist */}
-      <Playlist isOpen={isPlaylistOpen} onClose={handleTogglePlaylist} onSongSelect={handleSongSelect} />
+      {/* Modal de Playlist (ya existente) */}
+      <Playlist isOpen={isPlaylistOpen} onClose={handleTogglePlaylist} onSongSelect={(song, fullPlaylist) => {
+        setPlaylist(fullPlaylist);
+        const index = fullPlaylist.findIndex((s) => s.id === song.id);
+        setCurrentSongIndex(index);
+        props.fetchAudio(song.url, song.thumbnail);
+        setIsPlaylistOpen(false);
+      }} />
+
+      {/* Modal para Agregar Canción a una Playlist */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onRequestClose={() => setIsAddModalOpen(false)}
+        overlayClassName="history-modal-overlay"
+        className="history-modal"
+      >
+        <div className="history-modal-header">
+          <h2>Agregar a Playlist</h2>
+          <button onClick={() => setIsAddModalOpen(false)} className="close-btn">
+            <FaTimes />
+          </button>
+        </div>
+        <div className="history-modal-content">
+          {loadingAdd ? (
+            <p>Cargando tus playlists...</p>
+          ) : errorAdd ? (
+            <p>{errorAdd}</p>
+          ) : addModalPlaylists.length === 0 ? (
+            <p>No se encontraron playlists.</p>
+          ) : (
+            <ul>
+              {addModalPlaylists.map((pl) => (
+                <li key={pl.playlist_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <span>{pl.nombre}</span>
+                  <button
+                    className="btn btn-sm btn-outline-light"
+                    onClick={() => handleAddSongToPlaylist(pl.playlist_id)}
+                    title="Agregar esta canción a la playlist"
+                  >
+                    <FaPlus />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 });

@@ -11,7 +11,7 @@ import HistoryModal from "../components/HistoryModal"; // Modal de historial
 import { FaBars } from "react-icons/fa";
 import "../styles/Home.css";
 import noox from "../assets/noox.png";
-import ModalListPlaylist from "../components/ModalListPlaylists"; 
+import ModalListPlaylist, { Song } from "../components/ModalListPlaylists"; 
 
 const Home = () => {
   const [, setAudioData] = useState<{ title: string; audioUrl: string } | null>(null);
@@ -45,10 +45,12 @@ const Home = () => {
       );
       setAudioData({ title: response.data.title, audioUrl: response.data.audioUrl });
       setCurrentThumbnail(thumbnail);
+      // Se pasa como cuarto parámetro "url" (la URL de YouTube)
       musicPlayerRef.current?.playSong(
         response.data.title,
         response.data.audioUrl,
-        thumbnail
+        thumbnail,
+        url
       );
     } catch (error) {
       console.error("Error al obtener el audio:", error);
@@ -77,7 +79,6 @@ const Home = () => {
 
       { showComponents && (
         <>
-          {/* Sidebar con funciones para abrir historial y configuración */}
           <Sidebar 
             isOpen={isSidebarOpen} 
             onClose={() => setIsSidebarOpen(false)}
@@ -85,7 +86,6 @@ const Home = () => {
             onOpenSettings={() => setIsSettingsOpen(true)}
           />
 
-          {/* Top Navigation Bar */}
           <div className="top-bar">
             <button
               className="sidebar-toggle-btn"
@@ -97,7 +97,6 @@ const Home = () => {
           </div>
 
           <div className="content mt-5">
-            {/* Modal de configuración */}
             <Settings 
               isOpen={isSettingsOpen} 
               onClose={() => setIsSettingsOpen(false)} 
@@ -111,11 +110,15 @@ const Home = () => {
               <Trending fetchAudio={fetchAudio} />
             </div>
             <div className="playlist-section-wrapper">
-              <ModalListPlaylist />
+              <ModalListPlaylist 
+                onSongSelect={(song: Song) => {
+                  // Al seleccionar una canción desde la playlist, se reproduce
+                  fetchAudio(song.url_cancion, song.url_thumbnail);
+                }}
+              />
             </div>
           </div>
 
-          {/* Modal de Historial */}
           <HistoryModal
             isOpen={isHistoryOpen}
             onClose={() => setIsHistoryOpen(false)}
