@@ -15,10 +15,11 @@ import "../styles/MusicPlayer.css";
 import standbyImage from "../assets/standby.png";
 import Playlist from "./Playlist";
 import { Song } from "./HistoryModal";
-import { Capacitor,  } from '@capacitor/core';
+import { Capacitor } from "@capacitor/core";
 import NooxDownloader from "../plugins/NooxDownloader";
 import Swal from "sweetalert2";
-
+// Importamos el plugin
+import { CapacitorMusicControls } from "capacitor-music-controls-plugin";
 
 interface MusicPlayerProps {
   fetchAudio: (url: string, thumbnail: string) => void;
@@ -42,14 +43,13 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     url: "",
     thumbnail: standbyImage,
   });
-
+  
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [currentSongIndex, setCurrentSongIndex] = useState<number>(-1);
-
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
-  // Estados para el historial (no usado directamente, ya se actualiza en localStorage)
+  // Estados para el historial (se actualiza en localStorage)
   const [, setSongHistory] = useState<Song[]>([]);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     }
   }, []);
 
-  // Función para agregar canción al historial (lee y actualiza directamente localStorage)
+  // Función para agregar canción al historial (actualiza localStorage)
   const addSongToHistory = (name: string, url: string, thumbnail: string) => {
     const newSong: Song = {
       title: name,
@@ -72,6 +72,94 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     const updated = [newSong, ...history];
     localStorage.setItem("songHistory", JSON.stringify(updated));
   };
+
+  // Función para actualizar la notificación del reproductor usando CapacitorMusicControls
+  const updateMusicNotification = () => {
+    if (Capacitor.getPlatform() !== "web") {
+      const coverUrl = songDetails.thumbnail ? songDetails.thumbnail : "";
+      const options = {
+        track: songDetails.name,
+        artist: "Artista desconocido",
+        ticker: `Now playing ${songDetails.name}`,
+        cover: coverUrl,
+        isPlaying: isPlaying,
+        dismissable: false,
+        hasPrev: true,
+        hasNext: true,
+        hasClose: true,
+        playIcon: "media_play",
+        pauseIcon: "media_pause",
+        prevIcon: "media_prev",
+        nextIcon: "media_next",
+        closeIcon: "media_close",
+        notificationIcon: "notification"
+      };
+  
+      CapacitorMusicControls.create(options)
+        .then(() => {
+          // Notificación creada correctamente
+        })
+        .catch((err: any) => {
+          console.error("Error en CapacitorMusicControls.create:", err);
+        });
+    }
+  };
+  
+  useEffect(() => {
+    const handleControlsEvent = (action: any) => {
+      console.log("controlsNotification event:", action);
+      // El mensaje de la acción viene en action.message
+      switch (action.message) {
+        case "music-controls-play":
+          if (!isPlaying) togglePlayPause();
+          break;
+        case "music-controls-pause":
+          if (isPlaying) togglePlayPause();
+          break;
+        case "music-controls-next":
+          handleNextSong();
+          break;
+        case "music-controls-previous":
+          handlePrevSong();
+          break;
+        case "music-controls-destroy":
+          // Opcional: manejar cuando se destruye la notificación
+          break;
+        default:
+          break;
+      }
+    };
+  
+    if (Capacitor.getPlatform() === "android") {
+      // En Android (y con Capacitor 4 en adelante), se recomienda usar document.addEventListener
+      document.addEventListener("controlsNotification", (event: any) => {
+        // En algunos casos, el objeto event ya es la acción.
+        handleControlsEvent(event);
+      });
+    } 
+  }, [isPlaying, songDetails]);
+
+  // Actualizamos la notificación al cambiar los detalles de la canción
+  useEffect(() => {
+    updateMusicNotification();
+  }, [songDetails]);
+
+  // Actualizamos la notificación cuando cambia el estado de reproducción
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== "web") {
+      CapacitorMusicControls.updateIsPlaying({ isPlaying });
+    }
+  }, [isPlaying]);
+
+  // Limpiar la notificación al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (Capacitor.getPlatform() !== "web") {
+        CapacitorMusicControls.destroy?.()
+          .catch((err: any) => console.error("Error destruyendo music controls:", err));
+      }
+    };
+  }, []);
 
   useImperativeHandle(ref, () => ({
     playSong: (name: string, url: string, thumbnail: string) => {
@@ -142,7 +230,6 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
       const blob = await response.blob();
   
       if (Capacitor.getPlatform() === "web") {
-        // Método para Web/Tauri
         const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = blobUrl;
@@ -163,7 +250,6 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           }
         });
       } else {
-        // Método para Android/iOS con Capacitor
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
@@ -211,6 +297,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
       });
     }
   };
+
   const handleShare = () => {
     if (songDetails.url) {
       navigator.clipboard
@@ -223,6 +310,37 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
     }
   };
 
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: songDetails.name,
+        artist: "Artista desconocido",
+        album: "",
+        artwork: [
+          { src: songDetails.thumbnail, sizes: "96x96", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "128x128", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "192x192", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "256x256", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "384x384", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "512x512", type: "image/png" }
+        ]
+      });
+  
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (!isPlaying) togglePlayPause();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (isPlaying) togglePlayPause();
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        handleNextSong();
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        handlePrevSong();
+      });
+    }
+  }, [songDetails, isPlaying]);
+  
   const handleTogglePlaylist = () => {
     setIsPlaylistOpen(!isPlaylistOpen);
   };
@@ -283,7 +401,6 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           </div>
         </div>
 
-        {/* Controles de volumen y botones adicionales */}
         {/* Controles de volumen y botones adicionales */}
         <div className="col-md-3 d-flex align-items-center justify-content-end position-relative">
           <div className="volume-btn-container">

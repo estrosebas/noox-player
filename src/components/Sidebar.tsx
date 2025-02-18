@@ -1,7 +1,10 @@
-// Sidebar.tsx
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
+import { Button } from 'react-bootstrap'; // Importamos el componente Button de React Bootstrap
+import RegisterModal from './RegisterModal'; // Importa tu modal de registro
+import LoginModal from './LoginModal'; // Asegúrate de importar el modal
+import { useState } from 'react';
 import '../styles/Sidebar.css';
 
 interface SidebarProps {
@@ -31,6 +34,9 @@ const sidebarVariants = {
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory, onOpenSettings }) => {
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false); // Controlar la apertura del modal de registro
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
   return (
     <motion.div
       className="sidebar"
@@ -52,7 +58,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory, onOpe
           <li>
             <a href="#">Perfil</a>
           </li>
-          
           {/* Ítem para abrir historial */}
           <li>
             <a
@@ -84,6 +89,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory, onOpe
           </li>
         </ul>
       </nav>
+      <div className="sidebar-footer">
+        {/* Botones de registro e iniciar sesión */}
+        <Button
+          variant="success"
+          size="lg"
+          onClick={() => setIsRegisterOpen(true)}
+        >
+          Registrarse
+        </Button>
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() => setIsLoginOpen(true)}
+        >
+          Iniciar sesión
+        </Button>
+      </div>
+      {/* Modal de registro */}
+      <RegisterModal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} />
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </motion.div>
   );
 };

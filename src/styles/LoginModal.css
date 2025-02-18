@@ -1,0 +1,113 @@
+/* Fondo oscuro translúcido para el overlay */
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Modal estilizado */
+.login-modal {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.4);
+    position: relative;
+    z-index: 1001;
+}
+
+/* Contenedor del modal */
+.login-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Título */
+.login-container h3 {
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+    color: #1db954;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Formulario */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Inputs estilizados */
+.login-form input[type="email"],
+.login-form input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #1db954;
+    border-radius: 8px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    outline: none;
+    transition: border 0.3s ease;
+}
+
+.login-form input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.login-form input:focus {
+    border-color: #17a44a;
+}
+
+/* Botón de login */
+.login-button {
+    background: #1db954;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s;
+    font-weight: bold;
+}
+
+.login-button:hover {
+    background: #17a44a;
+    transform: scale(1.05);
+}
+
+/* Botón de cierre */
+.login-close {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s;
+    font-weight: bold;
+}
+
+.login-close:hover {
+    background: #d43f3f;
+    transform: scale(1.05);
+}
+
+/* Mensaje de error */
+.error {
+    color: #ff4d4d;
+    font-size: 14px;
+    margin-top: 5px;
+}
