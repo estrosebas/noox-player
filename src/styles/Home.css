@@ -133,6 +133,9 @@ body {
   max-width: auto;
   padding: 0 20px;
 }
+.content {
+  padding-bottom: 150px; 
+}
 .sidebar-toggle-btn {
   position: fixed;
   top: 20px;
