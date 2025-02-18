@@ -11,6 +11,7 @@ import HistoryModal from "../components/HistoryModal"; // Modal de historial
 import { FaBars } from "react-icons/fa";
 import "../styles/Home.css";
 import noox from "../assets/noox.png";
+import ModalListPlaylist from "../components/ModalListPlaylists"; 
 
 const Home = () => {
   const [, setAudioData] = useState<{ title: string; audioUrl: string } | null>(null);
@@ -108,6 +109,9 @@ const Home = () => {
             <MusicPlayer ref={musicPlayerRef} fetchAudio={fetchAudio} />
             <div className="trending-section-wrapper">
               <Trending fetchAudio={fetchAudio} />
+            </div>
+            <div className="playlist-section-wrapper">
+              <ModalListPlaylist />
             </div>
           </div>
 

@@ -3,8 +3,8 @@ import Modal from "react-modal";
 import axios from "axios";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
-import Cookies from "js-cookie"; // Importamos la librería para gestionar cookies
-import "../styles/LoginModal.css"; // Crea un archivo de estilos similar al de RegisterModal
+import Cookies from "js-cookie"; 
+import "../styles/LoginModal.css"; 
 
 Modal.setAppElement("#root");
 
@@ -18,12 +18,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [contrasena, setContrasena] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [, setUserData] = useState(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Validaciones básicas
     if (!correo || !contrasena) {
       setError("Por favor, completa todos los campos.");
       return;
@@ -35,20 +35,27 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         correo,
         contrasena,
       });
-      
-      // Si el login es exitoso, guarda una cookie con el usuario y su ID de sesión
+
       Cookies.set("session", JSON.stringify(response.data.usuario), { expires: 7 });
 
-      // Muestra una alerta de éxito con sweetalert2
+      // Mostrar alerta
       await Swal.fire({
         icon: "success",
         title: "Login exitoso",
         text: `Bienvenido, ${response.data.usuario.nombre}!`,
         timer: 2000,
         showConfirmButton: false,
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
       });
 
-      // Cierra el modal y limpia los campos
+      // Realizar la petición para obtener los datos del usuario
+      const usuarioId = response.data.usuario.usuario_id;
+      const userResponse = await axios.get(`https://noox.ooguy.com:5030/api/usuarios/${usuarioId}`);
+      setUserData(userResponse.data);
+
       setCorreo("");
       setContrasena("");
       onClose();
@@ -59,6 +66,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         icon: "error",
         title: "Error",
         text: "Correo o contraseña incorrectos.",
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
       });
     } finally {
       setLoading(false);

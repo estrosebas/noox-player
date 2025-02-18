@@ -112,4 +112,9 @@
     font-size: 14px;
     margin-top: 5px;
   }
+  /* Personalizar alertas */
+  .custom-swal-popup {
+    border-radius: 12px !important;
+    color: #fff; /* Asegura que el texto se vea en el fondo oscuro */
+  }
   

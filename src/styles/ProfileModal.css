@@ -1,5 +1,5 @@
 /* Fondo oscuro translúcido para el overlay */
-.login-overlay {
+.profile-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -13,7 +13,7 @@
 }
 
 /* Modal estilizado */
-.login-modal {
+.profile-modal {
     background: rgba(255, 255, 255, 0.1);
     padding: 25px;
     border-radius: 15px;
@@ -27,14 +27,14 @@
 }
 
 /* Contenedor del modal */
-.login-container {
+.profile-container {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
 /* Título */
-.login-container h3 {
+.profile-container h3 {
     margin-bottom: 10px;
     font-size: 1.5rem;
     color: #1db954;
@@ -43,15 +43,16 @@
 }
 
 /* Formulario */
-.login-form {
+.profile-form {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
 /* Inputs estilizados */
-.login-form input[type="email"],
-.login-form input[type="password"] {
+.profile-form input[type="text"],
+.profile-form input[type="email"],
+.profile-form input[type="password"] {
     width: 100%;
     padding: 10px;
     border: 2px solid #1db954;
@@ -63,16 +64,16 @@
     transition: border 0.3s ease;
 }
 
-.login-form input::placeholder {
+.profile-form input::placeholder {
     color: rgba(255, 255, 255, 0.7);
 }
 
-.login-form input:focus {
+.profile-form input:focus {
     border-color: #17a44a;
 }
 
-/* Botón de login */
-.login-button {
+/* Botón de actualizar */
+.profile-button {
     background: #1db954;
     color: white;
     border: none;
@@ -83,13 +84,13 @@
     font-weight: bold;
 }
 
-.login-button:hover {
+.profile-button:hover {
     background: #17a44a;
     transform: scale(1.05);
 }
 
-/* Botón de cierre */
-.login-close {
+/* Botón de cancelar */
+.profile-close {
     background: #ff4d4d;
     color: white;
     border: none;
@@ -100,7 +101,7 @@
     font-weight: bold;
 }
 
-.login-close:hover {
+.profile-close:hover {
     background: #d43f3f;
     transform: scale(1.05);
 }
@@ -111,9 +112,8 @@
     font-size: 14px;
     margin-top: 5px;
 }
+
 /* Personalizar alertas */
-.custom-swal-popup {
-    border-radius: 12px !important;
-    color: #fff; /* Asegura que el texto se vea en el fondo oscuro */
-  }
-  
+.swal-custom .swal2-popup {
+    border-radius: 20px; /* Establece el border-radius para todas las alertas */
+}

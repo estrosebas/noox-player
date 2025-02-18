@@ -42,6 +42,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose }) => {
         title: "Registro exitoso",
         text: `Bienvenido, ${response.data.nombre}!`,
         timer: 2000,
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        },
         showConfirmButton: false,
       });
       // Cierra el modal y limpia los campos
@@ -56,6 +60,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose }) => {
         icon: "error",
         title: "Error",
         text: "No se pudo completar el registro.",
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        },
       });
     } finally {
       setLoading(false);
