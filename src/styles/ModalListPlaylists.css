@@ -68,4 +68,28 @@
   .create-playlist-button:hover {
     transform: scale(1.1);
   }
-  
+  .history-modal-overlay {
+    z-index: 1040 !important; /* Un valor bajo para la capa del modal */
+  }
+  .lggn input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #1db954;
+    border-radius: 8px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white; /* Texto ingresado */
+    outline: none;
+    transition: border 0.3s ease;
+  }
+  .lggn input[type="text"]::placeholder {
+    color: white; /* Texto del placeholder */
+    opacity: 0.8; /* Opcional: ajusta la opacidad si deseas un efecto más tenue */
+  }
+  .login-container.lggn,
+.login-container.lggn h3,
+.login-container.lggn p,
+.login-container.lggn label,
+.login-container.lggn span {
+  color: white;
+}
