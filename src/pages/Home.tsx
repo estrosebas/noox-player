@@ -11,7 +11,7 @@ import HistoryModal from "../components/HistoryModal"; // Modal de historial
 import { FaBars } from "react-icons/fa";
 import "../styles/Home.css";
 import noox from "../assets/noox.png";
-import ModalListPlaylist, { Song } from "../components/ModalListPlaylists"; 
+import ModalListPlaylist from "../components/ModalListPlaylists"; 
 
 const Home = () => {
   const [, setAudioData] = useState<{ title: string; audioUrl: string } | null>(null);
@@ -110,12 +110,12 @@ const Home = () => {
               <Trending fetchAudio={fetchAudio} />
             </div>
             <div className="playlist-section-wrapper">
-              <ModalListPlaylist 
-                onSongSelect={(song: Song) => {
-                  // Al seleccionar una canción desde la playlist, se reproduce
-                  fetchAudio(song.url_cancion, song.url_thumbnail);
-                }}
-              />
+            <ModalListPlaylist 
+              onSongSelect={(song) => {
+                // Usamos las propiedades 'url' y 'thumbnail' del objeto formateado
+                fetchAudio(song.url, song.thumbnail);
+              }}
+            />
             </div>
           </div>
 

@@ -26,7 +26,12 @@ export interface Song {
 
 interface ModalListPlaylistProps {
   // Callback que se invoca cuando se selecciona una canción para reproducirla
-  onSongSelect: (song: Song) => void;
+  onSongSelect: (song: {
+    title: string;
+    id: string;
+    url: string;
+    thumbnail: string;
+  }) => void;
 }
 
 const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
@@ -140,13 +145,33 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
         `https://noox.ooguy.com:5030/api/songsbyplaylist/${playlist.playlist_id}`
       );
       setSongs(response.data);
-      console.log(response.data);
-      console.log(response.data[0]?.url_thumbnail);
     } catch (err) {
       setSongsError("Error al cargar las canciones.");
     } finally {
       setSongsLoading(false);
     }
+  };
+
+  // Función para formatear la playlist y reproducirla (guarda en localStorage y reproduce la 1ª canción)
+  const handlePlayPlaylist = () => {
+    if (songs.length === 0) return;
+    // Formateamos la respuesta para que el reproductor la maneje:
+    const formattedSongs = songs.map((song) => ({
+      title: song.nombre,
+      id: song.cancion_id.toString(),
+      url: song.url_cancion,
+      thumbnail: song.url_thumbnail,
+    }));
+    // Guardamos (sobrescribiendo) en localStorage la playlist formateada con la clave "currentPlaylist"
+    localStorage.setItem("currentPlaylist", JSON.stringify(formattedSongs));
+    // Disparamos un evento personalizado para notificar que se ha actualizado la playlist
+    window.dispatchEvent(
+      new CustomEvent("playlistUpdated", { detail: formattedSongs })
+    );
+    // Iniciamos la reproducción llamando a onSongSelect con la primera canción
+    onSongSelect(formattedSongs[0]);
+    // Cerramos el modal de canciones
+    setSongsModalOpen(false);
   };
 
   return (
@@ -269,24 +294,37 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
           ) : songs.length === 0 ? (
             <p>No hay canciones en esta playlist.</p>
           ) : (
-            <ul>
-              {songs.map((song) => (
-                <li
-                  key={song.cancion_id}
-                  onClick={() => {
-                    onSongSelect(song);
-                    setSongsModalOpen(false);
-                  }}
-                >
-                  <img
-                    src={song.url_thumbnail}
-                    alt={song.nombre}
-                    className="history-thumbnail"
-                  />
-                  <span>{song.nombre}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              {/* Botón para reproducir toda la playlist */}
+              <button onClick={handlePlayPlaylist} className="play-playlist-button">
+                Play Playlist
+              </button>
+              <ul>
+                {songs.map((song) => (
+                  <li
+                    key={song.cancion_id}
+                    onClick={() => {
+                      // Si se selecciona una canción individual, se podría formatear también
+                      const formattedSong = {
+                        title: song.nombre,
+                        id: song.cancion_id.toString(),
+                        url: song.url_cancion,
+                        thumbnail: song.url_thumbnail,
+                      };
+                      onSongSelect(formattedSong);
+                      setSongsModalOpen(false);
+                    }}
+                  >
+                    <img
+                      src={song.url_thumbnail}
+                      alt={song.nombre}
+                      className="history-thumbnail"
+                    />
+                    <span>{song.nombre}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </div>
       </Modal>
