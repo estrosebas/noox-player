@@ -7,9 +7,23 @@ const axios = require("axios");
 
 const app = express();
 const PORT = 5030;
-const SPOTIFY_CLIENT_ID = 'coloca tu client id de spotify';
-const SPOTIFY_CLIENT_SECRET = 'coloca tu client secret de spotify';
-const YOUTUBE_API_KEY = 'coloca tu apio key';
+const SPOTIFY_CLIENT_ID = 'b53f226c71b940598fbb5fa3dc8cbd87';
+const SPOTIFY_CLIENT_SECRET = 'a5604f66a3f048ddbe2f41b0a2b05903';
+const YOUTUBE_API_KEY = 'AIzaSyCs42WnWuVeoVTp-I1Vrr_Iloj0VUmhi7c';
+
+// Requiere el módulo mysql2
+const mysql = require("mysql2");
+// Crea un pool de conexiones (configura host, usuario, contraseña y base de datos según corresponda)
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "srestro",
+  password: "Estroganzo18050516@bffa",
+  database: "noox-music",
+  waitForConnections: true,
+  connectionLimit: 500,
+  queueLimit: 0,
+}).promise();
+
 
 // Cargar certificados SSL
 const options = {
@@ -330,24 +344,350 @@ app.get("/proxy", async (req, res) => {
 
 app.get("/api/trending-music", async (req, res) => {
   try {
-      const region = req.query.region || "US";
-      const response = await axios.get("https://www.googleapis.com/youtube/v3/videos", {
-          params: {
-              part: "snippet,statistics",
-              chart: "mostPopular",
-              regionCode: region,
-              videoCategoryId: "10",
-              maxResults: 10,
-              key: YOUTUBE_API_KEY
-          }
-      });
-      
-      res.json(response.data);
+    const region = req.query.region || "US";
+    const response = await axios.get("https://www.googleapis.com/youtube/v3/videos", {
+      params: {
+        part: "snippet",
+        chart: "mostPopular",
+        regionCode: region,
+        videoCategoryId: "10", // Categoría de música en YouTube
+        maxResults: 20,
+        key: YOUTUBE_API_KEY
+      }
+    });
+
+    // Transformar los datos en el formato deseado
+    const trendingMusic = response.data.items.map(video => ({
+      title: video.snippet.title,
+      id: video.id,
+      url: `https://www.youtube.com/watch?v=${video.id}`,
+      thumbnail: video.snippet.thumbnails.high.url
+    }));
+
+    res.json(trendingMusic);
   } catch (error) {
-      console.error("Error al obtener música en tendencia:", error);
-      res.status(500).json({ error: "Error al obtener datos de YouTube" });
+    console.error("Error al obtener música en tendencia:", error);
+    res.status(500).json({ error: "Error al obtener datos de YouTube" });
   }
 });
+
+/**
+ * Endpoints CRUD para la tabla de Usuarios
+ */
+
+// CREATE: Agregar un nuevo usuario
+app.post("/api/usuarios", async (req, res) => {
+  const { nombre, correo, contrasena } = req.body;
+  if (!nombre || !correo || !contrasena) {
+    return res.status(400).json({ error: "Faltan datos requeridos" });
+  }
+  try {
+    const [result] = await pool.query(
+      "INSERT INTO usuarios (nombre, correo, contrasena) VALUES (?, ?, ?)",
+      [nombre, correo, contrasena]
+    );
+    res.status(201).json({ usuario_id: result.insertId, nombre, correo });
+  } catch (error) {
+    console.error("Error al crear usuario:", error);
+    res.status(500).json({ error: "Error al crear usuario" });
+  }
+});
+
+// READ: Obtener todos los usuarios
+app.get("/api/usuarios", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM usuarios");
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener usuarios:", error);
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+});
+
+// READ: Obtener un usuario por ID
+app.get("/api/usuarios/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.query("SELECT * FROM usuarios WHERE usuario_id = ?", [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error al obtener usuario:", error);
+    res.status(500).json({ error: "Error al obtener usuario" });
+  }
+});
+
+// UPDATE: Actualizar un usuario
+app.put("/api/usuarios/:id", async (req, res) => {
+  const { id } = req.params;
+  const { nombre, correo, contrasena } = req.body;
+  try {
+    const [result] = await pool.query(
+      "UPDATE usuarios SET nombre = ?, correo = ?, contrasena = ? WHERE usuario_id = ?",
+      [nombre, correo, contrasena, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.json({ usuario_id: id, nombre, correo });
+  } catch (error) {
+    console.error("Error al actualizar usuario:", error);
+    res.status(500).json({ error: "Error al actualizar usuario" });
+  }
+});
+
+// DELETE: Eliminar un usuario
+app.delete("/api/usuarios/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.query("DELETE FROM usuarios WHERE usuario_id = ?", [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.json({ message: "Usuario eliminado" });
+  } catch (error) {
+    console.error("Error al eliminar usuario:", error);
+    res.status(500).json({ error: "Error al eliminar usuario" });
+  }
+});
+
+/**
+ * Endpoints CRUD para la tabla de Playlists
+ */
+
+// CREATE: Agregar una nueva playlist
+app.post("/api/playlists", async (req, res) => {
+  const { nombre, descripcion, usuario_id } = req.body;
+  if (!nombre || !usuario_id) {
+    return res.status(400).json({ error: "Faltan datos requeridos (nombre y usuario_id)" });
+  }
+  try {
+    const [result] = await pool.query(
+      "INSERT INTO playlists (nombre, descripcion, usuario_id) VALUES (?, ?, ?)",
+      [nombre, descripcion || null, usuario_id]
+    );
+    res.status(201).json({ playlist_id: result.insertId, nombre, descripcion, usuario_id });
+  } catch (error) {
+    console.error("Error al crear playlist:", error);
+    res.status(500).json({ error: "Error al crear playlist" });
+  }
+});
+
+// READ: Obtener todas las playlists
+app.get("/api/playlists", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM playlists");
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener playlists:", error);
+    res.status(500).json({ error: "Error al obtener playlists" });
+  }
+});
+
+// READ: Obtener una playlist por ID
+app.get("/api/playlists/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.query("SELECT * FROM playlists WHERE playlist_id = ?", [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Playlist no encontrada" });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error al obtener playlist:", error);
+    res.status(500).json({ error: "Error al obtener playlist" });
+  }
+});
+
+// UPDATE: Actualizar una playlist
+app.put("/api/playlists/:id", async (req, res) => {
+  const { id } = req.params;
+  const { nombre, descripcion, usuario_id } = req.body;
+  try {
+    const [result] = await pool.query(
+      "UPDATE playlists SET nombre = ?, descripcion = ?, usuario_id = ? WHERE playlist_id = ?",
+      [nombre, descripcion || null, usuario_id, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Playlist no encontrada" });
+    }
+    res.json({ playlist_id: id, nombre, descripcion, usuario_id });
+  } catch (error) {
+    console.error("Error al actualizar playlist:", error);
+    res.status(500).json({ error: "Error al actualizar playlist" });
+  }
+});
+
+// DELETE: Eliminar una playlist
+app.delete("/api/playlists/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.query("DELETE FROM playlists WHERE playlist_id = ?", [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Playlist no encontrada" });
+    }
+    res.json({ message: "Playlist eliminada" });
+  } catch (error) {
+    console.error("Error al eliminar playlist:", error);
+    res.status(500).json({ error: "Error al eliminar playlist" });
+  }
+});
+
+/**
+ * Endpoints CRUD para la tabla de Canciones
+ */
+
+// CREATE: Agregar una nueva canción
+app.post("/api/canciones", async (req, res) => {
+  const { nombre, url_cancion, url_thumbnail, playlist_id } = req.body;
+  if (!nombre || !url_cancion || !url_thumbnail || !playlist_id) {
+    return res.status(400).json({ error: "Faltan datos requeridos" });
+  }
+  try {
+    const [result] = await pool.query(
+      "INSERT INTO canciones (nombre, url_cancion, url_thumbnail, playlist_id) VALUES (?, ?, ?, ?)",
+      [nombre, url_cancion, url_thumbnail, playlist_id]
+    );
+    res.status(201).json({ cancion_id: result.insertId, nombre, url_cancion, url_thumbnail, playlist_id });
+  } catch (error) {
+    console.error("Error al crear canción:", error);
+    res.status(500).json({ error: "Error al crear canción" });
+  }
+});
+
+// READ: Obtener todas las canciones
+app.get("/api/canciones", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM canciones");
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener canciones:", error);
+    res.status(500).json({ error: "Error al obtener canciones" });
+  }
+});
+
+// READ: Obtener una canción por ID
+app.get("/api/canciones/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.query("SELECT * FROM canciones WHERE cancion_id = ?", [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Canción no encontrada" });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error al obtener canción:", error);
+    res.status(500).json({ error: "Error al obtener canción" });
+  }
+});
+
+// UPDATE: Actualizar una canción
+app.put("/api/canciones/:id", async (req, res) => {
+  const { id } = req.params;
+  const { nombre, url_cancion, url_thumbnail, playlist_id } = req.body;
+  try {
+    const [result] = await pool.query(
+      "UPDATE canciones SET nombre = ?, url_cancion = ?, url_thumbnail = ?, playlist_id = ? WHERE cancion_id = ?",
+      [nombre, url_cancion, url_thumbnail, playlist_id, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Canción no encontrada" });
+    }
+    res.json({ cancion_id: id, nombre, url_cancion, url_thumbnail, playlist_id });
+  } catch (error) {
+    console.error("Error al actualizar canción:", error);
+    res.status(500).json({ error: "Error al actualizar canción" });
+  }
+});
+
+// DELETE: Eliminar una canción
+app.delete("/api/canciones/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.query("DELETE FROM canciones WHERE cancion_id = ?", [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Canción no encontrada" });
+    }
+    res.json({ message: "Canción eliminada" });
+  } catch (error) {
+    console.error("Error al eliminar canción:", error);
+    res.status(500).json({ error: "Error al eliminar canción" });
+  }
+});
+// 1️⃣ Endpoint para loguearse
+app.post("/api/login", async (req, res) => {
+  const { correo, contrasena } = req.body;
+
+  if (!correo || !contrasena) {
+    return res.status(400).json({ error: "Correo y contraseña son requeridos" });
+  }
+
+  try {
+    // Buscar usuario por correo
+    const [user] = await pool.query("SELECT * FROM usuarios WHERE correo = ?", [correo]);
+    
+    if (user.length === 0) {
+      return res.status(404).json({ error: "Correo incorrecto" });
+    }
+
+    // Validar la contraseña (puedes usar una librería como bcrypt para comparar hashes)
+    if (user[0].contrasena !== contrasena) {
+      return res.status(400).json({ error: "Contraseña incorrecta" });
+    }
+
+    // Si todo es correcto, devuelve el usuario
+    res.json({ message: "Login exitoso", usuario: user[0] });
+  } catch (error) {
+    console.error("Error al hacer login:", error);
+    res.status(500).json({ error: "Error al hacer login" });
+  }
+});
+
+// 2️⃣ Endpoint para listar todas las playlists de un usuario
+app.get("/api/playlists-by-user/:usuario_id", async (req, res) => {
+  const { usuario_id } = req.params;
+
+  try {
+    // Buscar todas las playlists del usuario
+    const [playlists] = await pool.query("SELECT * FROM playlists WHERE usuario_id = ?", [usuario_id]);
+
+    if (playlists.length === 0) {
+      return res.status(404).json({ error: "No se encontraron playlists para este usuario" });
+    }
+
+    res.json(playlists);
+  } catch (error) {
+    console.error("Error al obtener playlists del usuario:", error);
+    res.status(500).json({ error: "Error al obtener playlists del usuario" });
+  }
+});
+
+app.get("/api/songsbyplaylist/:playlistId", async (req, res) => {
+  const { playlistId } = req.params;
+  try {
+    // Realizamos el inner join entre 'canciones' y 'playlists'
+    const [rows] = await pool.query(
+      `SELECT 
+         c.cancion_id, 
+         c.nombre, 
+         c.url_cancion, 
+         c.url_thumbnail, 
+         p.nombre AS playlist_name
+       FROM canciones c
+       INNER JOIN playlists p ON c.playlist_id = p.playlist_id
+       WHERE c.playlist_id = ?`,
+      [playlistId]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener las canciones:", error);
+    res.status(500).json({ error: "Error al obtener las canciones." });
+  }
+});
+
 // Crear el servidor HTTPS
 https.createServer(options, app).listen(PORT, () => {
   console.log(`Servidor corriendo en https://noox.ooguy.com:${PORT}`);

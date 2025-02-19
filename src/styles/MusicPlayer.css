@@ -57,3 +57,7 @@
     margin-bottom: 5px;
     z-index: 10;
   }
+  .custom-swal-popup {
+    border-radius: 12px !important;
+    color: #fff; /* Asegura que el texto se vea en el fondo oscuro */
+  }
