@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie"; // Para gestionar cookies
 import Modal from "react-modal";
-import { FaPlus, FaTimes } from "react-icons/fa";
+import { FaPlus, FaTimes, FaPlay, FaTrashAlt } from "react-icons/fa"; // Importamos FaTrashAlt
+import Swal from "sweetalert2"; // Para utilizar SweetAlert2
 import "../styles/ModalListPlaylists.css";
 
 // Configuramos el elemento raíz para react-modal (ajustar el selector según tu proyecto)
@@ -25,30 +26,30 @@ export interface Song {
 }
 
 interface ModalListPlaylistProps {
-  // Callback que se invoca cuando se selecciona una canción para reproducirla
-  onSongSelect: (song: Song) => void;
+  onSongSelect: (song: { title: string; id: string; url: string; thumbnail: string }) => void;
 }
 
 const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
   const [playlists, setPlaylists] = useState<PlaylistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // Estados para el modal de creación de playlist
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
-  const [modalError, setModalError] = useState("");
-
-  // Estados para el modal de canciones de la playlist
   const [songs, setSongs] = useState<Song[]>([]);
   const [songsLoading, setSongsLoading] = useState(false);
   const [songsError, setSongsError] = useState("");
   const [songsModalOpen, setSongsModalOpen] = useState(false);
-  // Estado para almacenar el nombre de la playlist seleccionada
   const [currentPlaylistName, setCurrentPlaylistName] = useState("");
+  const [currentPlaylistId, setCurrentPlaylistId] = useState<number>(0);
+  
+  // Modal de creación de playlist
+  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para abrir el modal de creación de playlist
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
+  const [modalError, setModalError] = useState("");
 
-  // Función para cargar las playlists del usuario
+  useEffect(() => {
+    fetchPlaylists();
+  }, []);
+
   const fetchPlaylists = async () => {
     const sessionCookie = Cookies.get("session");
     if (sessionCookie) {
@@ -71,12 +72,24 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
     }
   };
 
-  useEffect(() => {
-    fetchPlaylists();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Efecto que revisa cada 3 segundos la cookie para detectar si hay sesión activa
+  const handlePlaylistClick = async (playlist: PlaylistItem) => {
+    setSongsError("");
+    setSongs([]);
+    setSongsLoading(true);
+    setSongsModalOpen(true);
+    setCurrentPlaylistName(playlist.nombre);
+    setCurrentPlaylistId(playlist.playlist_id);
+    try {
+      const response = await axios.get(
+        `https://noox.ooguy.com:5030/api/songsbyplaylist/${playlist.playlist_id}`
+      );
+      setSongs(response.data);
+    } catch (err) {
+      setSongsError("Error al cargar las canciones.");
+    } finally {
+      setSongsLoading(false);
+    }
+  };
   useEffect(() => {
     const intervalId = setInterval(() => {
       const sessionCookie = Cookies.get("session");
@@ -90,10 +103,23 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
           fetchPlaylists();
         }
       }
-    }, 3000);
+    }, 1000);
 
     return () => clearInterval(intervalId);
   }, [playlists, error]);
+  const handlePlayPlaylist = () => {
+    if (songs.length === 0) return;
+    const formattedSongs = songs.map((song) => ({
+      title: song.nombre,
+      id: song.cancion_id.toString(),
+      url: song.url_cancion,
+      thumbnail: song.url_thumbnail,
+    }));
+    localStorage.setItem("currentPlaylist", JSON.stringify(formattedSongs));
+    window.dispatchEvent(new CustomEvent("playlistUpdated", { detail: formattedSongs }));
+    onSongSelect(formattedSongs[0]);
+    setSongsModalOpen(false);
+  };
 
   // Función para crear nueva playlist
   const handleCreatePlaylist = async () => {
@@ -127,25 +153,51 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
     }
   };
 
-  // Función para manejar el clic en una playlist y cargar sus canciones
-  const handlePlaylistClick = async (playlist: PlaylistItem) => {
-    setSongsError("");
-    setSongs([]);
-    setSongsLoading(true);
-    setSongsModalOpen(true);
-    // Guardamos el nombre de la playlist para mostrarlo en el modal
-    setCurrentPlaylistName(playlist.nombre);
+  const handleDeletePlaylist = async () => {
     try {
-      const response = await axios.get(
-        `https://noox.ooguy.com:5030/api/songsbyplaylist/${playlist.playlist_id}`
-      );
-      setSongs(response.data);
-      console.log(response.data);
-      console.log(response.data[0]?.url_thumbnail);
+      const confirmDelete = await Swal.fire({
+        title: "¿Estás seguro?",
+        text: "Esta acción eliminará la playlist y todas sus canciones.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Eliminar",
+        cancelButtonText: "Cancelar",
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
+      });
+      if (confirmDelete.isConfirmed) {
+        try {
+          await axios.delete(`https://noox.ooguy.com:5030/api/playlists/${currentPlaylistId}`);
+          
+          // SweetAlert de éxito con el fondo y la clase personalizada
+          Swal.fire({
+            title: "Eliminado",
+            text: "La playlist ha sido eliminada",
+            icon: "success",
+            background: "linear-gradient(to right, #141e30, #243b55)",
+            customClass: {
+              popup: "custom-swal-popup"
+            }
+          });
+          
+          fetchPlaylists(); // Actualizamos la lista de playlists
+          setSongsModalOpen(false); // Cerramos el modal
+        } catch (err) {
+          Swal.fire({
+            title: "Error",
+            text: "Hubo un error al eliminar la playlist",
+            icon: "error",
+            background: "linear-gradient(to right, #141e30, #243b55)",
+            customClass: {
+              popup: "custom-swal-popup"
+            }
+          });
+        }
+      }
     } catch (err) {
-      setSongsError("Error al cargar las canciones.");
-    } finally {
-      setSongsLoading(false);
+      Swal.fire("Error", "Hubo un error al eliminar la playlist", "error");
     }
   };
 
@@ -160,10 +212,7 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
         }}
       >
         <h3 className="playlist-section-title">Mis Playlists</h3>
-        <button
-          className="create-playlist-button"
-          onClick={() => setIsModalOpen(true)}
-        >
+        <button className="create-playlist-button" onClick={() => setIsModalOpen(true)}>
           <FaPlus />
         </button>
       </div>
@@ -174,31 +223,24 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
       ) : (
         <div className="playlist-list">
           {playlists.map((playlist) => (
-            <div
-              key={playlist.playlist_id}
-              className="playlist-item"
-              onClick={() => handlePlaylistClick(playlist)}
-            >
+            <div key={playlist.playlist_id} className="playlist-item" onClick={() => handlePlaylistClick(playlist)}>
               <div className="playlist-item-title">
                 <h4>{playlist.nombre}</h4>
                 <p>{playlist.descripcion}</p>
               </div>
-              <span className="playlist-item-date">
-                {new Date(playlist.fecha_creacion).toLocaleDateString()}
-              </span>
+              <span className="playlist-item-date">{new Date(playlist.fecha_creacion).toLocaleDateString()}</span>
             </div>
           ))}
         </div>
       )}
-
-      {/* Modal para crear nueva playlist */}
-      <Modal
+            {/* Modal para crear nueva playlist */}
+            <Modal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         overlayClassName="login-overlay"
-        className="login-modal"
+        className="login-modal login-create-playlist"
       >
-        <div className="login-container">
+        <div className="login-container lggn">
           {Cookies.get("session") ? (
             <>
               <h3>Crear Playlist</h3>
@@ -249,17 +291,20 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
       </Modal>
 
       {/* Modal para mostrar las canciones de una playlist */}
-      <Modal
-        isOpen={songsModalOpen}
-        onRequestClose={() => setSongsModalOpen(false)}
-        overlayClassName="history-modal-overlay"
-        className="history-modal"
-      >
-        <div className="history-modal-header">
-          <h2>{currentPlaylistName}</h2>
-          <button onClick={() => setSongsModalOpen(false)} className="close-btn">
-            <FaTimes />
-          </button>
+      <Modal isOpen={songsModalOpen} onRequestClose={() => setSongsModalOpen(false)} overlayClassName="history-modal-overlay" className="history-modal">
+        <div className="history-modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 className="playlist-title">{currentPlaylistName}</h2>
+          <div className="button-container">
+            <button onClick={handlePlayPlaylist} className="btn btn-sm btn-outline-light">
+              <FaPlay />
+            </button>
+            <button onClick={handleDeletePlaylist} className="btn btn-sm btn-outline-danger">
+              <FaTrashAlt />
+            </button>
+            <button onClick={() => setSongsModalOpen(false)} className="close-btn">
+              <FaTimes />
+            </button>
+          </div>
         </div>
         <div className="history-modal-content">
           {songsLoading ? (
@@ -271,23 +316,21 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
           ) : (
             <ul>
               {songs.map((song) => (
-                <li
-                  key={song.cancion_id}
-                  onClick={() => {
-                    onSongSelect(song);
-                    setSongsModalOpen(false);
-                  }}
-                >
-                  <img
-                    src={song.url_thumbnail}
-                    alt={song.nombre}
-                    className="history-thumbnail"
-                  />
+                <li key={song.cancion_id} onClick={() => onSongSelect({ title: song.nombre, id: song.cancion_id.toString(), url: song.url_cancion, thumbnail: song.url_thumbnail })}>
+                  <img src={song.url_thumbnail} alt={song.nombre} className="history-thumbnail" />
                   <span>{song.nombre}</span>
                 </li>
               ))}
             </ul>
           )}
+        </div>
+      </Modal>
+
+      {/* Modal de creación de playlist */}
+      <Modal isOpen={isModalOpen} onRequestClose={() => setIsModalOpen(false)} overlayClassName="create-playlist-overlay" className="create-playlist-modal">
+        <div className="create-playlist-container">
+          <h3>Crear nueva Playlist</h3>
+          {modalError && <p className="error-text">{modalError}</p>}
         </div>
       </Modal>
     </div>

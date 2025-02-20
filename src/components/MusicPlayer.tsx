@@ -187,7 +187,12 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
       addSongToHistory(name, url, thumbnail);
       if (audioRef.current) {
         audioRef.current.src = url;
-        audioRef.current.play();
+        audioRef.current.play().catch((error) => {
+          if (error.name !== "AbortError") {
+            console.error("Error playing audio:", error);
+          }
+          // Si es AbortError, lo ignoramos
+        });
       }
     },
   }));
@@ -202,21 +207,48 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
       setIsPlaying(!isPlaying);
     }
   };
+  useEffect(() => {
+    const handlePlaylistUpdated = (event: CustomEvent) => {
+      const newPlaylist = event.detail;
+      setPlaylist(newPlaylist);
+      setCurrentSongIndex(0); // Opcional: reiniciamos al primer elemento
+    };
+  
+    window.addEventListener("playlistUpdated", handlePlaylistUpdated as EventListener);
+  
+    return () => {
+      window.removeEventListener("playlistUpdated", handlePlaylistUpdated as EventListener);
+    };
+  }, []);
+  
+  useEffect(() => {
+    const storedPlaylist = localStorage.getItem("currentPlaylist");
+    if (storedPlaylist) {
+      const parsedPlaylist = JSON.parse(storedPlaylist);
+      // Actualizamos el estado de la playlist para la navegación
+      setPlaylist(parsedPlaylist);
+    }
+  }, []);
 
+  //manejo de errores nan
   const handleProgress = () => {
     if (!audioRef.current) return;
     const { currentTime, duration } = audioRef.current;
-    setProgress((currentTime / duration) * 100);
-
+    const newProgress = duration ? (currentTime / duration) * 100 : 0;
+    setProgress(newProgress);
+  
     const formatTime = (time: number) => {
       const minutes = Math.floor(time / 60);
-      const seconds = Math.floor(time % 60).toString().padStart(2, "0");
+      const seconds = Math.floor(time % 60)
+        .toString()
+        .padStart(2, "0");
       return `${minutes}:${seconds}`;
     };
-
+  
     setCurrentTime(formatTime(currentTime));
     setDurationTime(formatTime(duration || 0));
   };
+  
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (audioRef.current) {
@@ -508,8 +540,15 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
         </div>
       </div>
 
-      <audio ref={audioRef} src={songDetails.url} onTimeUpdate={handleProgress} onLoadedMetadata={handleProgress} autoPlay />
-
+      {songDetails.url && (
+        <audio 
+          ref={audioRef} 
+          src={songDetails.url} 
+          onTimeUpdate={handleProgress} 
+          onLoadedMetadata={handleProgress} 
+          autoPlay 
+        />
+      )}
       {/* Modal de Playlist (ya existente) */}
       <Playlist isOpen={isPlaylistOpen} onClose={handleTogglePlaylist} onSongSelect={(song, fullPlaylist) => {
         setPlaylist(fullPlaylist);

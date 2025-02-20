@@ -14,7 +14,7 @@
 
 /* Modal estilizado con fondo translúcido */
 .playlist-modal {
-    background: rgba(255, 255, 255, 0.1);
+    background: #282828;
     padding: 25px;
     border-radius: 15px;
     width: 90%;

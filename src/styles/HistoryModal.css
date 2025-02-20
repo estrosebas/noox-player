@@ -26,15 +26,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    padding: 10px;
   }
   
   .close-btn {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 16px;
     background: none;
     border: none;
     color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
   }
   
   .history-modal-content ul {
@@ -68,3 +69,23 @@
     cursor: pointer;
   }
   
+  .button-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .btn-outline-light, .btn-outline-danger {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+
+
+li:hover {
+  transform: translate(5px);
+  transition: transform 0.5s;
+}
+
+li {
+  transition: transform 0.5s;
+}
