@@ -93,3 +93,10 @@
 .login-container.lggn span {
   color: white;
 }
+.delete-btn {
+  margin-left: auto; /* Esto empuja el botón hacia la derecha */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
