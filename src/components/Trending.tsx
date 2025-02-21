@@ -69,10 +69,17 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
 
   useEffect(() => {
     const fetchTrending = async () => {
-      // Extraemos la región a partir del locale del navegador
-      const userLocale = navigator.language || "es-PE";
-      const region = (userLocale.split("-")[1] || "PE").toUpperCase();
+      setLoading(true);
       try {
+        // 1. Obtener la IP del usuario
+        const ipResponse = await axios.get("https://api.ipquery.io/");
+        const userIp = ipResponse.data;
+  
+        // 2. Obtener la región usando la IP del usuario
+        const regionResponse = await axios.get(`https://api.ipquery.io/${userIp}`);
+        const region = regionResponse.data.location.country_code || "PE";  // Usar 'PE' como valor por defecto
+  
+        // 3. Llamar a la API con la región obtenida
         const response = await axios.get(
           `https://noox.ooguy.com:5030/api/trending-music?region=${region}`
         );
@@ -83,9 +90,10 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
         setLoading(false);
       }
     };
-
+  
     fetchTrending();
   }, []);
+  
 
   return (
     <div className="trending-container">

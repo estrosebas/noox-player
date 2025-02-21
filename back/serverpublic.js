@@ -25,9 +25,9 @@ const pool = mysql.createPool({
 }).promise();
 const app = express();
 const PORT = 5030;
-const SPOTIFY_CLIENT_ID = 'b53f226c71b940598fbb5fa3dc8cbd87';
-const SPOTIFY_CLIENT_SECRET = 'a5604f66a3f048ddbe2f41b0a2b05903';
-const YOUTUBE_API_KEY = 'AIzaSyCs42WnWuVeoVTp-I1Vrr_Iloj0VUmhi7c';
+const SPOTIFY_CLIENT_ID = 'tu client id';
+const SPOTIFY_CLIENT_SECRET = 'tu cliente secret key';
+const YOUTUBE_API_KEY = 'tu youtube api key';
 
 // Cargar certificados SSL
 const options = {

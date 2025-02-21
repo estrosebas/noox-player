@@ -4,6 +4,7 @@ import { FaTimes } from 'react-icons/fa';
 import { Button } from 'react-bootstrap';
 import RegisterModal from './RegisterModal';
 import LoginModal from './LoginModal';
+import { GoogleOAuthProvider } from '@react-oauth/google'; 
 import ProfileModal from './ProfileModal'; // Importa el modal de perfil
 import Cookies from 'js-cookie'; // Para gestionar cookies
 import Swal from 'sweetalert2'; // Importamos SweetAlert2
@@ -140,7 +141,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenHistory, onOpe
 
       {/* Modal de registro y login */}
       <RegisterModal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} />
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      
+      <GoogleOAuthProvider clientId="131317178402-b96jr7cg0pp88ordmgv68hsfr4rvedhd.apps.googleusercontent.com">  {/* Aquí configuras el clientId */}
+        <div>
+          {/* Aquí pones el LoginModal o el componente que contiene el botón de Google Login */}
+          <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+        </div>
+      </GoogleOAuthProvider>
+
+      
       {/* Modal de perfil */}
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </motion.div>
