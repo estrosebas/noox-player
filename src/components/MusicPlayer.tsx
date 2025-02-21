@@ -546,6 +546,7 @@ const MusicPlayer = forwardRef<MusicPlayerRef, MusicPlayerProps>((props, ref) =>
           src={songDetails.url} 
           onTimeUpdate={handleProgress} 
           onLoadedMetadata={handleProgress} 
+          onEnded={handleNextSong}
           autoPlay 
         />
       )}

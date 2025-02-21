@@ -152,7 +152,50 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
       setModalError("Error al crear la playlist.");
     }
   };
-
+  const handleDeleteSong = async (songId: number) => {
+    try {
+      // Confirmación de eliminación con SweetAlert
+      const confirmDelete = await Swal.fire({
+        title: "¿Estás seguro?",
+        text: "Esta acción eliminará la canción de la playlist.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Eliminar",
+        cancelButtonText: "Cancelar",
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
+      });
+  
+      if (confirmDelete.isConfirmed) {
+        // Hacer el fetch para eliminar la canción
+        await axios.delete(`https://noox.ooguy.com:5030/api/canciones/${songId}`);
+        Swal.fire({
+          title: "Eliminado",
+          text: "La canción ha sido eliminada",
+          icon: "success",
+          background: "linear-gradient(to right, #141e30, #243b55)",
+          customClass: {
+            popup: "custom-swal-popup"
+          }
+        });
+  
+        // Actualizar las canciones en el estado
+        setSongs(songs.filter((song) => song.cancion_id !== songId));
+      }
+    } catch (err) {
+      Swal.fire({
+        title: "Error",
+        text: "Hubo un error al eliminar la canción",
+        icon: "error",
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
+      });
+    }
+  };
   const handleDeletePlaylist = async () => {
     try {
       const confirmDelete = await Swal.fire({
@@ -319,6 +362,13 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
                 <li key={song.cancion_id} onClick={() => onSongSelect({ title: song.nombre, id: song.cancion_id.toString(), url: song.url_cancion, thumbnail: song.url_thumbnail })}>
                   <img src={song.url_thumbnail} alt={song.nombre} className="history-thumbnail" />
                   <span>{song.nombre}</span>
+                  <button
+                    onClick={() => handleDeleteSong(song.cancion_id)}  // Llamamos a la función handleDeleteSong con el ID de la canción
+                    className="btn btn-sm btn-outline-danger delete-btn"
+                    title="Eliminar canción"
+                  >
+                    <FaTrashAlt />
+                  </button>
                 </li>
               ))}
             </ul>

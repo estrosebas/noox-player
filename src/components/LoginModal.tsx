@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Modal from "react-modal";
+import { GoogleLogin } from '@react-oauth/google'; // Importar GoogleLogin
 import axios from "axios";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
@@ -38,7 +39,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
       Cookies.set("session", JSON.stringify(response.data.usuario), { expires: 7 });
 
-      // Mostrar alerta
       await Swal.fire({
         icon: "success",
         title: "Login exitoso",
@@ -51,7 +51,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         }
       });
 
-      // Realizar la petición para obtener los datos del usuario
       const usuarioId = response.data.usuario.usuario_id;
       const userResponse = await axios.get(`https://noox.ooguy.com:5030/api/usuarios/${usuarioId}`);
       setUserData(userResponse.data);
@@ -74,6 +73,53 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (response: any) => {
+    try {
+      const token = response.credential;
+      const userResponse = await axios.post("https://noox.ooguy.com:5030/api/google-login", { token });
+      Cookies.set("session", JSON.stringify(userResponse.data.usuario), { expires: 7 });
+
+      await Swal.fire({
+        icon: "success",
+        title: "Login exitoso",
+        text: `Bienvenido, ${userResponse.data.usuario.nombre}!`,
+        timer: 2000,
+        showConfirmButton: false,
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
+      });
+
+      setUserData(userResponse.data);
+      onClose();
+    } catch (error) {
+      console.error("Error de Google Auth:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al iniciar sesión con Google.",
+        background: "linear-gradient(to right, #141e30, #243b55)",
+        customClass: {
+          popup: "custom-swal-popup"
+        }
+      });
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.error("Error de Google Auth");
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Hubo un problema con la autenticación de Google.",
+      background: "linear-gradient(to right, #141e30, #243b55)",
+      customClass: {
+        popup: "custom-swal-popup"
+      }
+    });
   };
 
   return (
@@ -108,6 +154,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               {loading ? "Iniciando..." : "Iniciar sesión"}
             </button>
           </form>
+
+          <div className="google-login">
+            <GoogleLogin 
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+            />
+          </div>
+
           <button className="login-close" onClick={onClose}>
             Cerrar
           </button>
