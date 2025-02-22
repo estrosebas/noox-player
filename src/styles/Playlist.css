@@ -18,12 +18,14 @@
     padding: 25px;
     border-radius: 15px;
     width: 90%;
-    max-width: 400px;
+    max-width: 500px; /* Aumentado para pantallas más grandes */
+    max-height: 90vh; /* Limita la altura del modal al 90% de la altura de la ventana */
     text-align: center;
     backdrop-filter: blur(10px);
     box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.4);
     position: relative;
     z-index: 1001;
+    overflow-y: auto; /* Añadir desplazamiento cuando el contenido es grande */
 }
 
 /* Contenedor general */
@@ -96,7 +98,7 @@
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.3s ease, transform 0.2s;
-    margin-top: 15px;
+    margin-top: 2px;
     font-weight: bold;
 }
 
@@ -144,6 +146,12 @@
     padding: 10px;
 }
 
+/* Limitar el tamaño del contenedor de las canciones */
+.playlist-items {
+    max-height: 250px; /* Ajusta según la altura de tu modal */
+    overflow-y: auto;
+}
+
 .playlist-item {
     display: flex;
     align-items: center;
@@ -178,4 +186,22 @@
     .playlist-container h3 {
         font-size: 1.3rem;
     }
+
+    .playlist-items {
+        max-height: 200px;
+    }
+}
+
+.playlist-create{
+    background: #1db954;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease, transform 0.2s;
+}
+.playlist-create:hover {
+    transform: scale(1.05);
 }

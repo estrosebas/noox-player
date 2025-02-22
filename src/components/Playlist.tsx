@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Cookies from "js-cookie";
 import Modal from "react-modal";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -25,6 +26,8 @@ const Playlist = ({ isOpen, onClose, onSongSelect }: PlaylistProps) => {
   const [playlistData, setPlaylistData] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [playlistName, setPlaylistName] = useState("");
+  const [playlistDescription, setPlaylistDescription] = useState("");
 
   const importPlaylist = async () => {
     if (source === "youtube") {
@@ -35,7 +38,6 @@ const Playlist = ({ isOpen, onClose, onSongSelect }: PlaylistProps) => {
           `https://noox.ooguy.com:5030/api/youtube-playlist?url=${encodeURIComponent(inputValue)}`
         );
         setPlaylistData(response.data);
-        localStorage.setItem("youtubePlaylist", JSON.stringify(response.data));
       } catch (err) {
         console.error(err);
         setError("Error al importar la playlist");
@@ -44,6 +46,56 @@ const Playlist = ({ isOpen, onClose, onSongSelect }: PlaylistProps) => {
       }
     } else {
       setError("Importación para esta fuente no está implementada");
+    }
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!playlistName || !playlistDescription) {
+      setError("Por favor, ingresa un nombre y descripción para la playlist.");
+      return;
+    }
+
+    // Obtén el usuario_id desde la cookie (suponiendo que ya se guarda en cookies)
+    const sessionCookie = Cookies.get("session");
+    if (!sessionCookie) {
+      setError("No hay sesión activa.");
+      return;
+    }
+    const userData = JSON.parse(sessionCookie);
+    const usuarioId = userData.usuario_id;
+
+    // 1. Crear la playlist
+    try {
+      const playlistResponse = await axios.post(
+        "https://noox.ooguy.com:5030/api/playlists",
+        {
+          nombre: playlistName,
+          descripcion: playlistDescription,
+          usuario_id: usuarioId,
+        }
+      );
+
+      const playlistId = playlistResponse.data.playlist_id; // Asegúrate de que el backend devuelve el id de la playlist creada
+      console.log("Playlist creada con ID:", playlistId);
+      // 2. Crear las canciones asociadas a la playlist
+      const songRequests = playlistData.map((song) =>
+        axios.post("https://noox.ooguy.com:5030/api/canciones", {
+          nombre: song.title,
+          url_cancion: song.url,
+          url_thumbnail: song.thumbnail,
+          playlist_id: playlistId,
+        })
+      );
+
+      // Esperar a que todas las canciones se creen
+      await Promise.all(songRequests);
+      setPlaylistData([]); // Limpiar la lista de canciones después de guardarlas
+
+      // Cerrar el modal o realizar cualquier otra acción
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError("Error al crear la playlist.");
     }
   };
 
@@ -94,15 +146,6 @@ const Playlist = ({ isOpen, onClose, onSongSelect }: PlaylistProps) => {
             </button>
           </div>
 
-          {source === "spotify" && (
-            <input
-              type="text"
-              placeholder="URL de Spotify"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-            />
-          )}
-
           {source === "youtube" && (
             <div className="import-section">
               <input
@@ -116,8 +159,6 @@ const Playlist = ({ isOpen, onClose, onSongSelect }: PlaylistProps) => {
               </button>
             </div>
           )}
-
-          {source === "local" && <input type="file" accept="audio/*" />}
 
           {error && <div className="error">{error}</div>}
 
@@ -143,6 +184,27 @@ const Playlist = ({ isOpen, onClose, onSongSelect }: PlaylistProps) => {
             </div>
           )}
 
+          {/* Ingresar el nombre y la descripción de la playlist */}
+          {playlistData.length > 0 && (
+            <div className="playlist-form">
+              <input
+                type="text"
+                placeholder="Nombre de la Playlist"
+                value={playlistName}
+                onChange={(e) => setPlaylistName(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Descripción breve"
+                value={playlistDescription}
+                onChange={(e) => setPlaylistDescription(e.target.value)}
+              />
+              
+            </div>
+          )}
+          <button className="confirm-button playlist-create" onClick={handleCreatePlaylist}>
+                Crear Playlist
+          </button>
           <button className="playlist-close" onClick={onClose}>
             Cerrar
           </button>
