@@ -1,173 +1,143 @@
-# Noox Music
-# PRUEBALO AQUÍ: [https://noox.ooguy.com](https://noox.ooguy.com)
-**Noox Music** es un reproductor de música multiplataforma que permite:
+# 🎵 Noox Player
 
-- Escuchar y descargar canciones desde YouTube usando `yt-dlp`.
-- Importar playlists de YouTube (y próximamente Spotify).
-- Mostrar sugerencias de búsqueda en tiempo real.
-- Reproducir música con controles de siguiente/anterior, volumen y descarga.
-- Sincronizarse con un servidor Node/Express con SSL y endpoints para conversión y proxy de audio.
+Un reproductor de música web moderno y elegante construido con React y TypeScript que te permite transmitir música desde diversas fuentes.
 
-Este proyecto combina **React + Vite** (frontend), **Express** (backend), **Electron** (escritorio) y **Capacitor** (Android).
+## 🌟 Características Principales
 
----
+### 🎮 Reproductor de Música
+- **Control de Reproducción Avanzado**
+  - Barra de progreso interactiva
+  - Control de volumen deslizable
+  - Botones de reproducción/pausa
+  - Navegación entre canciones (siguiente/anterior)
+  - Visualización de tiempo transcurrido y duración total
 
-## Características
+### 🔍 Sistema de Búsqueda
+- **Búsqueda en Tiempo Real**
+  - Sugerencias automáticas mientras escribes
+  - Visualización de miniaturas de videos
+  - Resultados instantáneos
+  - Interfaz intuitiva de selección
 
-1. **Búsqueda y Sugerencias**  
-  - Autocompletado de búsqueda en YouTube.  
-  - Endpoints `/api/suggestions` y `/api/yt-search` para encontrar videos.
+### 📑 Gestión de Playlists
+- **Funcionalidades Completas**
+  - Crear playlists personalizadas
+  - Añadir y eliminar canciones
+  - Organizar el orden de reproducción
+  - Guardar playlists favoritas
+  - Reproducción secuencial automática
 
-2. **Reproductor Multimedia**  
-  - Interfaz con controles (play, pause, next, prev, volumen).  
-  - Descarga de audio (`.mp3`) con un clic.  
-  - Importación de playlists de YouTube (usando `yt-dlp`).
+### 👤 Sistema de Usuarios
+- **Características de Cuenta**
+  - Registro de usuario
+  - Inicio de sesión
+  - Perfil personalizado
+  - Historial de reproducción
+  - Preferencias guardadas
 
-3. **Integración con Spotify**  
-  - Lógica inicial para obtener canciones de playlists de Spotify y buscarlas en YouTube.
+## 🛠️ Tecnologías Utilizadas
 
-4. **Modo Escritorio con Electron**  
-  - Se puede empaquetar como app de escritorio (Windows, macOS, Linux).
+- **Frontend:**
+  - React 18
+  - TypeScript
+  - Bootstrap 5
+  - CSS Modules
+  - HTML5 Audio API
 
-5. **Android con Capacitor**  
-  - Proyecto listo para compilar como app nativa en Android.
+## 💻 Requisitos del Sistema
 
-6. **Animaciones**  
-  - Uso de **Framer Motion** para animaciones de entrada en modales.
+- Node.js (versión 14.0 o superior)
+- npm (versión 6.0 o superior) o yarn
+- Navegador web moderno (Chrome, Firefox, Edge)
+- Conexión a Internet
 
----
+## 🚀 Guía de Instalación
 
-## Estructura de Carpetas
+### 1. Preparación del Entorno
+Asegúrate de tener instalado Node.js y npm en tu sistema. Puedes descargarlos desde:
+- [Node.js](https://nodejs.org/es/)
 
+Para verificar la instalación, abre una terminal y ejecuta:
+```bash
+node --version
+npm --version
+```
+### 2. Clonar el Repositorio
+```bash
+git clone https://github.com/tu-usuario/noox-player.git
+cd noox-player
+```  
+### 3. Instalar Dependencias
+```bash
+npm install
+```
+### 4. Iniciar el Proyecto
+```bash
+npm run dev
+```
+El proyecto se abrirá automáticamente en tu navegador predeterminado en http://localhost:5173
+
+## 📁 Estructura del Proyecto
 ```
 noox-player/
-├─ android/          # Proyecto Android (Capacitor)
-├─ back/             # (Opcional) Podrías ubicar lógica backend adicional
-├─ dist/             # Build final de Vite (frontend)
-├─ electron/
-│   └─ main.mjs      # Proceso principal de Electron
-├─ node_modules/
-├─ public/
-├─ src/
-│   ├─ components/
-│   │   ├─ SearchBar.tsx
-│   │   ├─ MusicPlayer.tsx
-│   │   ├─ Playlist.tsx
-│   │   ├─ Settings.tsx
-│   │   └─ ...
-│   ├─ pages/
-│   │   └─ Home.tsx
-│   └─ ...
-├─ server.js         # Servidor Express + Endpoints (SSL)
-├─ front.js          # Servir la carpeta dist con Express (opcional)
-├─ package.json
-├─ tsconfig.json
-└─ vite.config.ts
+├── src/
+│   ├── components/         # Componentes reutilizables
+│   │   ├── MusicPlayer/   # Reproductor principal
+│   │   ├── SearchBar/     # Barra de búsqueda
+│   │   ├── Playlist/      # Gestión de playlists
+│   │   └── ...
+│   ├── pages/             # Páginas de la aplicación
+│   ├── styles/            # Estilos CSS
+│   └── main.tsx          # Punto de entrada
 ```
+## 🔧 Funcionalidades Detalladas
+### 🎵 Reproductor Principal (MusicPlayer)
+- Control de Audio
+  - Reproducción/Pausa con animaciones suaves
+  - Control de volumen con persistencia
+  - Barra de progreso interactiva
+  - Visualización de tiempo en formato mm:ss
+### 🔍 Barra de Búsqueda (SearchBar)
+- Búsqueda Inteligente
+  - Sugerencias en tiempo real
+  - Caché de búsquedas recientes
+  - Filtrado de resultados
+  - Previsualización de miniaturas
+### 📑 Sistema de Playlists
+- Gestión Completa
+  - Creación de playlists ilimitadas
+  - Organización por drag & drop
+  - Reproducción aleatoria
+  - Modo repetición
+## ⚙️ Configuración Personalizada
+### Temas
+- Modo oscuro por defecto
+- Interfaz adaptable
+- Animaciones personalizables
+### Ajustes de Audio
+- Calidad de reproducción ajustable
+- Ecualizador básico
+- Control de fade entre canciones
+## 🤝 Contribución
+1. Haz un Fork del proyecto
+2. Crea una rama para tu función ( git checkout -b feature/AmazingFeature )
+3. Commit tus cambios ( git commit -m 'Add some AmazingFeature' )
+4. Push a la rama ( git push origin feature/AmazingFeature )
+5. Abre un Pull Request
+## 🐛 Reporte de Problemas
+Si encuentras algún bug o tienes sugerencias, por favor abre un issue en el repositorio de GitHub.
 
-## Requisitos
+## 📝 Licencia
+Este proyecto está bajo la Licencia MIT - ver el archivo LICENSE.md para más detalles.
 
-- **Node.js** 16+
-- **npm** o **yarn**
-- **Vite** 6+ (instalado localmente en el proyecto)
-- **Electron** 34+ (para modo escritorio)
-- **Capacitor** 7+ (para Android)
-- `yt-dlp` y `ffmpeg` instalados en tu sistema (para extraer el audio de YouTube)
+## 📞 Soporte
+Para soporte técnico o consultas:
 
----
+- Crear un issue en GitHub
+- Enviar un correo a: [ estrosebas@gmail.com ]
+## 🙏 Agradecimientos
+- A la comunidad de React
+- A todos los contribuidores
+- A los usuarios que confían en Noox Player
 
-## Instalación y Ejecución (Modo Web)
-
-1. **Instalar dependencias**  
-  ```bash
-  npm install
-  ```
-
-2. **Ejecutar el backend (con SSL, puertos, etc.)**  
-  Ajusta tus claves y certificados en `server.js`, luego corre:
-  ```bash
-  node server.js
-  ```
-  Esto levantará el servidor en https://noox.ooguy.com:5030 (o tu dominio/puerto configurado).
-
-3. **Ejecutar el frontend**  
-  ```bash
-  npm run dev
-  ```
-  Esto inicia el servidor de desarrollo de Vite en http://localhost:3000.
-
-Ahora podrás abrir http://localhost:3000 en tu navegador para usar Noox Music.
-
----
-
-## Uso
-
-- **Buscar una canción**: En la barra de búsqueda, escribe algo y presiona Enter o clic en “Buscar”.
-- **Sugerencias**: A medida que escribes, verás sugerencias de búsqueda.
-- **Reproducir**: Haz clic en uno de los resultados para reproducirlo en el reproductor de la parte inferior.
-- **Importar playlist de YouTube**: Abre el ícono de playlist (en el MusicPlayer) y pega la URL de YouTube.
-- **Controles**: Puedes pausar, adelantar, retroceder y ajustar el volumen.
-- **Descarga**: El botón de descarga guarda el audio localmente en formato .mp3 (o .webm).
-
----
-
-## Empaquetar para Escritorio (Electron)
-
-### Construir el frontend
-
-```bash
-npm run build
-```
-Generará la carpeta `dist/` con la app de React.
-
-### Empaquetar con electron-builder
-
-```bash
-npm run electron:build
-```
-Se usará `electron/main.mjs` como proceso principal. El instalador y/o carpeta `win-unpacked` (u otro) aparecerá en `dist/`.
-
-### Ejecutar en modo desarrollo
-
-```bash
-npm run electron:dev
-```
-Arranca Vite en `localhost:3000`. Espera a que esté disponible y abre Electron.
-
----
-
-## Empaquetar para Android (Capacitor)
-
-### Crear/editar capacitor.config.ts
-
-Asegúrate de que `webDir` apunte a `dist`.
-
-### Compilar la app
-
-```bash
-npm run build
-npx cap sync android
-```
-
-### Abrir Android Studio
-
-```bash
-npx cap open android
-```
-Desde ahí puedes ejecutar en un emulador o dispositivo y generar el APK/AAB.
-
----
-
-## Recursos Adicionales
-
-- **React Modal** para modales con animación de entrada.
-- **Framer Motion** para animaciones en React.
-- **yt-dlp** para extraer audio de YouTube.
-- **Electron** para empaquetar la app de escritorio.
-- **Capacitor** para empaquetar la app en Android/iOS.
-
----
-
-## Licencia
-
-Este proyecto está bajo la Noox Music License (Non-Commercial) creada por Diego Sebastián Gonzales Gómez, que exige atribución y prohíbe el uso comercial sin autorización. Revisa el archivo LICENSE.md para más detalles.
+Desarrollado con ❤️ por Diego Sebastian Gonzales Gomez
