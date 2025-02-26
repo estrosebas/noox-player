@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { Play, Clock } from "lucide-react";
 import axios from "axios";
 import "../styles/Trending.css";
 
@@ -13,79 +14,27 @@ interface TrendingProps {
   fetchAudio: (url: string, thumbnail: string) => void;
 }
 
-const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, className = "" }) => {
-  const textRef = useRef<HTMLSpanElement>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [scrollDistance, setScrollDistance] = useState(0);
-  const [animationDuration, setAnimationDuration] = useState(0);
-
-  useEffect(() => {
-    const element = textRef.current;
-    if (element && element.parentElement) {
-      const containerWidth = element.parentElement.clientWidth;
-      const distance = element.scrollWidth - containerWidth;
-      setIsOverflowing(distance > 0);
-      setScrollDistance(distance);
-      // Velocidad en píxeles por segundo (ajusta según tu preferencia)
-      const speed = 50;
-      setAnimationDuration(distance / speed);
-    }
-  }, [text]);
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-  };
-
-  // Si el texto desborda, definimos variables CSS para la animación
-  const styleVars = isOverflowing
-    ? ({
-        "--scroll-distance": `${scrollDistance}px`,
-        "--animation-duration": `${animationDuration}s`,
-      } as React.CSSProperties)
-    : {};
-
-  return (
-    <span
-      ref={textRef}
-      style={styleVars}
-      className={`${className} ${(isOverflowing && isHovered) ? "marquee" : ""}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {text}
-    </span>
-  );
-};
-
 const Trending = ({ fetchAudio }: TrendingProps) => {
   const [trendingList, setTrendingList] = useState<TrendingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTrending = async () => {
       setLoading(true);
       try {
-        // 1. Obtener la IP del usuario
         const ipResponse = await axios.get("https://api.ipquery.io/");
         const userIp = ipResponse.data;
-  
-        // 2. Obtener la región usando la IP del usuario
         const regionResponse = await axios.get(`https://api.ipquery.io/${userIp}`);
-        const region = regionResponse.data.location.country_code || "PE";  // Usar 'PE' como valor por defecto
+        const region = regionResponse.data.location.country_code || "PE";
   
-        // 3. Llamar a la API con la región obtenida
         const response = await axios.get(
           `https://noox.ooguy.com:5030/api/trending-music?region=${region}`
         );
         setTrendingList(response.data);
       } catch (err) {
-        setError("No se pudieron cargar las tendencias. Intenta más tarde.");
+        setError("Could not load trending songs. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -93,31 +42,65 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
   
     fetchTrending();
   }, []);
-  
+
+  if (loading) {
+    return (
+      <div className="trending-container">
+        <h2 className="trending-section-title">Trending on YouTube 🎵</h2>
+        <div className="trending-loading">
+          <div className="trending-loading-pulse"></div>
+          <p>Loading trending songs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="trending-container">
+        <h2 className="trending-section-title">Trending on YouTube 🎵</h2>
+        <div className="trending-error">
+          <p>{error}</p>
+          <button className="btn-retry" onClick={() => window.location.reload()}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="trending-container">
-      <h3 className="trending-section-title">Tendencias en YouTube 🎵</h3>
-      {loading ? (
-        <p className="loading-text">Cargando tendencias...</p>
-      ) : error ? (
-        <p className="error-text">{error}</p>
-      ) : (
-        <div className="trending-list">
-          {trendingList.map((item) => (
-            <div
-              key={item.id}
-              className="trending-item"
-              onClick={() => fetchAudio(item.url, item.thumbnail)}
-            >
-              <img src={item.thumbnail} alt={item.title} className="trending-item-img" />
-              <div className="trending-item-title-container">
-                <MarqueeText text={item.title} className="trending-item-title" />
+      <h2 className="trending-section-title">Trending on YouTube 🎵</h2>
+      <div className="trending-grid">
+        {trendingList.map((item, index) => (
+          <div
+            key={item.id}
+            className="trending-card"
+            onMouseEnter={() => setHoveredIndex(index)}
+            onMouseLeave={() => setHoveredIndex(null)}
+            onClick={() => fetchAudio(item.url, item.thumbnail)}
+          >
+            <div className="trending-card-image">
+              <img src={item.thumbnail} alt={item.title} loading="lazy" />
+              {hoveredIndex === index && (
+                <div className="trending-card-overlay">
+                  <button className="play-button">
+                    <Play size={24} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="trending-card-content">
+              <h3 className="trending-card-title">{item.title}</h3>
+              <div className="trending-card-meta">
+                <Clock size={14} />
+                <span>Now trending</span>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

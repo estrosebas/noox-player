@@ -61,8 +61,8 @@ a {
 /* Layout principal */
 .app-container {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  grid-template-rows: 1fr 90px;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
   height: 100vh;
   overflow: hidden;
 }
@@ -73,10 +73,12 @@ a {
   overflow-y: auto;
   padding: 24px;
   background: linear-gradient(to bottom, #404040, var(--dark));
+  padding-bottom: 120px; /* Espacio para el reproductor */
 }
 
 .main-content h1 {
   margin-bottom: 24px;
+  font-size: 2rem;
 }
 
 /* Top Controls */
@@ -85,32 +87,9 @@ a {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 32px;
-}
-
-.search-container {
+  gap: 16px;
   position: relative;
-  width: 300px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--gray);
-}
-
-.input-search {
-  background-color: var(--dark-light);
-  border: none;
-  padding: 12px 16px 12px 40px;
-  border-radius: 4px;
-  color: var(--light);
-  width: 100%;
-}
-
-.input-search:focus {
-  outline: 2px solid var(--primary);
+  z-index: 1000;
 }
 
 .profile-button {
@@ -121,103 +100,121 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .profile-button:hover {
   color: var(--light);
-  background-color: rgba(255, 255, 255, 0.1);
   transform: scale(1.05);
 }
 
-/* Grid de playlists */
-.playlists-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 24px;
-  padding: 24px 0;
-}
-
-.playlist-card {
-  background-color: var(--dark-light);
-  padding: 16px;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.playlist-card:hover {
-  background-color: #333;
-}
-
-.playlist-image {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 12px;
-}
-
-.playlist-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.playlist-description {
+.menu-button {
   color: var(--gray);
-  font-size: 14px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.menu-button:hover {
+  color: var(--light);
 }
 
 /* Responsive styles */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-container {
     grid-template-columns: 1fr;
   }
 
   .main-content {
     grid-column: 1;
-    padding-top: 84px;
+    padding: 24px 16px;
+    padding-top: 80px;
+    padding-bottom: 120px;
   }
 
   .main-content h1 {
-    margin-top: 24px;
-    margin-bottom: 24px;
-    font-size: 28px;
+    font-size: 1.75rem;
   }
 
   .top-controls {
     position: fixed;
-    top: 0px;
+    top: 0;
     left: 0;
     right: 0;
     padding: 12px 16px;
+    background-color: var(--dark);
     margin-bottom: 0;
-    z-index: 89;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding-top: 56px;
   }
 
-  .search-container {
-    width: auto;
-    flex: 1;
-    margin-right: 16px;
+  .main-content h1 {
+    font-size: 1.5rem;
   }
 
-  .playlists-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 16px;
+  .top-controls {
+    height: 56px;
+    padding: 0 16px;
+    margin: 0;
+    background: var(--dark);
+    gap: 12px;
+    display: flex;
+    align-items: center;
+  }
+
+  .menu-button {
+    padding: 4px;
+    background: none;
   }
 }
 
 @media (max-width: 480px) {
   .main-content {
-    padding: 84px 16px 16px;
+    padding: 12px;
+    padding-top: 56px;
+    padding-bottom: 110px;
   }
 
   .main-content h1 {
-    margin-top: 32px;
-    font-size: 24px;
+    font-size: 1.25rem;
+    margin-bottom: 16px;
   }
 
-  .playlists-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
+  .top-controls {
+    padding: 0 12px;
   }
+}
+
+/* Modal styles */
+.ReactModal__Overlay {
+  opacity: 0;
+  transition: opacity 200ms ease-in-out;
+}
+
+.ReactModal__Overlay--after-open {
+  opacity: 1;
+}
+
+.ReactModal__Overlay--before-close {
+  opacity: 0;
+}
+
+.ReactModal__Content {
+  transform: scale(0.95);
+  transition: transform 200ms ease-in-out;
+}
+
+.ReactModal__Content--after-open {
+  transform: scale(1);
+}
+
+.ReactModal__Content--before-close {
+  transform: scale(0.95);
 }
