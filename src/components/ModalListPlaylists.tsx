@@ -84,6 +84,13 @@ const ModalListPlaylist = ({ onSongSelect }: ModalListPlaylistProps) => {
         `https://noox.ooguy.com:5030/api/songsbyplaylist/${playlist.playlist_id}`
       );
       setSongs(response.data);
+  
+      // Por cada canción, extraemos la URL y realizamos el fetch para cachear la canción.
+      response.data.forEach((song: any) => {
+        const url = song.url_cancion;
+        fetch(`https://noox.ooguy.com:5030/search?url=${encodeURIComponent(url)}`)
+          .catch((err) => console.error("Error cacheando la canción:", err));
+      });
     } catch (err) {
       setSongsError("Error al cargar las canciones.");
     } finally {
