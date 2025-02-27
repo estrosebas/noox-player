@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Play, Trash2 } from 'lucide-react';
+import { X, Plus, Play, Trash2, Download } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Swal from 'sweetalert2';
@@ -39,6 +39,16 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   const [currentPlaylist, setCurrentPlaylist] = useState<PlaylistItem | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newPlaylist, setNewPlaylist] = useState({ nombre: '', descripcion: '' });
+  
+  // Import playlist states
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [source, setSource] = useState<"spotify" | "youtube" | "local">("youtube");
+  const [inputValue, setInputValue] = useState("");
+  const [importedPlaylistData, setImportedPlaylistData] = useState<any[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importPlaylistName, setImportPlaylistName] = useState("");
+  const [importPlaylistDescription, setImportPlaylistDescription] = useState("");
 
   // Fetch playlists when modal opens or user logs in/out
   useEffect(() => {
@@ -267,6 +277,109 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
     }
   };
 
+  // Import playlist functions
+  const importPlaylist = async () => {
+    if (!inputValue.trim()) {
+      setImportError("Please enter a valid URL");
+      return;
+    }
+
+    if (source === "youtube") {
+      setImportLoading(true);
+      setImportError("");
+      try {
+        const response = await axios.get(
+          `https://noox.ooguy.com:5030/api/youtube-playlist?url=${encodeURIComponent(inputValue)}`
+        );
+        setImportedPlaylistData(response.data);
+        
+        // Auto-fill playlist name if available
+        if (response.data.length > 0 && response.data[0].playlistTitle) {
+          setImportPlaylistName(response.data[0].playlistTitle);
+        }
+      } catch (err) {
+        console.error(err);
+        setImportError("Error importing playlist");
+      } finally {
+        setImportLoading(false);
+      }
+    } else {
+      setImportError("Import for this source is not yet implemented");
+    }
+  };
+
+  const handleImportPlaylist = async () => {
+    if (!importPlaylistName || !importPlaylistDescription) {
+      setImportError("Please enter a name and description for the playlist");
+      return;
+    }
+
+    if (importedPlaylistData.length === 0) {
+      setImportError("No songs to import");
+      return;
+    }
+
+    const sessionCookie = Cookies.get("session");
+    if (!sessionCookie) {
+      setImportError("Please log in to create playlists");
+      return;
+    }
+
+    try {
+      setImportLoading(true);
+      const userData = JSON.parse(sessionCookie);
+      
+      // Create the playlist
+      const playlistResponse = await axios.post(
+        "https://noox.ooguy.com:5030/api/playlists",
+        {
+          nombre: importPlaylistName,
+          descripcion: importPlaylistDescription,
+          usuario_id: userData.usuario_id,
+        }
+      );
+
+      const playlistId = playlistResponse.data.playlist_id;
+      
+      // Add songs to the playlist
+      const songRequests = importedPlaylistData.map((song) =>
+        axios.post("https://noox.ooguy.com:5030/api/canciones", {
+          nombre: song.title,
+          url_cancion: song.url,
+          url_thumbnail: song.thumbnail,
+          playlist_id: playlistId,
+        })
+      );
+
+      await Promise.all(songRequests);
+      
+      // Refresh playlists
+      fetchPlaylists();
+      
+      // Reset import form
+      setImportedPlaylistData([]);
+      setInputValue("");
+      setImportPlaylistName("");
+      setImportPlaylistDescription("");
+      setIsImportModalOpen(false);
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Playlist imported successfully',
+        timer: 1500,
+        showConfirmButton: false,
+        background: 'linear-gradient(to right, #141e30, #243b55)',
+        customClass: { popup: 'custom-swal-popup' }
+      });
+    } catch (err) {
+      console.error(err);
+      setImportError("Error creating playlist");
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -284,6 +397,10 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
               <button className="create-playlist-button" onClick={() => setIsCreateModalOpen(true)}>
                 <Plus size={20} />
                 New Playlist
+              </button>
+              <button className="import-playlist-button" onClick={() => setIsImportModalOpen(true)}>
+                <Download size={20} />
+                Import Playlist
               </button>
               <button className="action-button" onClick={onClose}>
                 <X size={24} />
@@ -434,6 +551,147 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
                 <button className="btn-primary" onClick={handleCreatePlaylist}>
                   Create Playlist
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Import Playlist Modal */}
+        {isImportModalOpen && (
+          <div className="playlists-modal-overlay">
+            <motion.div
+              className="playlists-modal import-modal"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <div className="playlists-modal-header">
+                <h2>Import Playlist</h2>
+                <button className="action-button" onClick={() => setIsImportModalOpen(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="playlists-modal-content">
+                <div className="source-selector">
+                  <h3>Select Source</h3>
+                  <div className="source-buttons">
+                    <button 
+                      className={`source-button ${source === 'youtube' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSource("youtube");
+                        setImportedPlaylistData([]);
+                        setInputValue("");
+                        setImportError("");
+                      }}
+                    >
+                      YouTube
+                    </button>
+                    <button 
+                      className={`source-button ${source === 'spotify' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSource("spotify");
+                        setImportedPlaylistData([]);
+                        setInputValue("");
+                        setImportError("");
+                      }}
+                    >
+                      Spotify
+                    </button>
+                    <button 
+                      className={`source-button ${source === 'local' ? 'active' : ''}`}
+                      onClick={() => {
+                        setSource("local");
+                        setImportedPlaylistData([]);
+                        setInputValue("");
+                        setImportError("");
+                      }}
+                    >
+                      Local
+                    </button>
+                  </div>
+                </div>
+
+                {source === "youtube" && (
+                  <div className="import-section">
+                    <div className="form-group">
+                      <label htmlFor="playlistUrl">YouTube Playlist URL</label>
+                      <div className="input-with-button">
+                        <input
+                          type="text"
+                          id="playlistUrl"
+                          placeholder="https://www.youtube.com/playlist?list=..."
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                        />
+                        <button 
+                          className="import-button" 
+                          onClick={importPlaylist}
+                          disabled={importLoading}
+                        >
+                          {importLoading ? "Importing..." : "Import"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {importError && <div className="error-state">{importError}</div>}
+
+                {importedPlaylistData.length > 0 && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="importPlaylistName">Playlist Name</label>
+                      <input
+                        type="text"
+                        id="importPlaylistName"
+                        value={importPlaylistName}
+                        onChange={(e) => setImportPlaylistName(e.target.value)}
+                        placeholder="Enter playlist name"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="importPlaylistDescription">Description</label>
+                      <input
+                        type="text"
+                        id="importPlaylistDescription"
+                        value={importPlaylistDescription}
+                        onChange={(e) => setImportPlaylistDescription(e.target.value)}
+                        placeholder="Enter playlist description"
+                      />
+                    </div>
+
+                    <div className="imported-songs">
+                      <h3>Songs to Import ({importedPlaylistData.length})</h3>
+                      <div className="imported-songs-list">
+                        {importedPlaylistData.slice(0, 5).map((song, index) => (
+                          <div key={index} className="imported-song-item">
+                            <img
+                              src={song.thumbnail}
+                              alt={song.title}
+                              className="imported-song-thumbnail"
+                            />
+                            <span className="imported-song-title">{song.title}</span>
+                          </div>
+                        ))}
+                        {importedPlaylistData.length > 5 && (
+                          <div className="more-songs">
+                            +{importedPlaylistData.length - 5} more songs
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button 
+                      className="btn-primary" 
+                      onClick={handleImportPlaylist}
+                      disabled={importLoading}
+                    >
+                      {importLoading ? "Creating Playlist..." : "Create Playlist"}
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
           </div>

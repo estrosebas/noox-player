@@ -12,6 +12,10 @@
   --dark-light: #282828;
   --light: #FFFFFF;
   --gray: #B3B3B3;
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 70px;
+  --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --content-padding: 24px;
 }
 
 /* Estilos base */
@@ -61,24 +65,70 @@ a {
 /* Layout principal */
 .app-container {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: var(--sidebar-width) 1fr;
   grid-template-rows: 1fr auto;
   height: 100vh;
   overflow: hidden;
+  transition: grid-template-columns var(--sidebar-transition);
+  position: relative;
+}
+
+.app-container.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+}
+
+.app-container.sidebar-closed {
+  grid-template-columns: 0 1fr;
 }
 
 .main-content {
   grid-column: 2;
   grid-row: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: var(--content-padding);
   background: linear-gradient(to bottom, #404040, var(--dark));
   padding-bottom: 120px; /* Espacio para el reproductor */
+  transition: all var(--sidebar-transition);
+  will-change: padding, width;
+  position: relative;
+}
+
+.main-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to bottom, rgba(64, 64, 64, 1), rgba(64, 64, 64, 0));
+  pointer-events: none;
+  z-index: 0;
 }
 
 .main-content h1 {
   margin-bottom: 24px;
   font-size: 2rem;
+  position: relative;
+  z-index: 1;
+  transition: transform var(--sidebar-transition), opacity 0.2s ease;
+}
+
+.sidebar-collapsed .main-content h1,
+.sidebar-closed .main-content h1 {
+  transform: translateX(10px);
+  opacity: 0;
+  animation: fadeInSlide 0.5s forwards 0.2s;
+}
+
+@keyframes fadeInSlide {
+  from {
+    transform: translateX(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Top Controls */
@@ -90,6 +140,12 @@ a {
   gap: 16px;
   position: relative;
   z-index: 1000;
+  transition: all var(--sidebar-transition);
+}
+
+.sidebar-collapsed .top-controls,
+.sidebar-closed .top-controls {
+  padding-left: 10px;
 }
 
 .profile-button {
@@ -121,9 +177,36 @@ a {
   color: var(--light);
 }
 
+/* Content transition effects */
+.trending-container {
+  transition: transform var(--sidebar-transition), opacity 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-collapsed .trending-container,
+.sidebar-closed .trending-container {
+  transform: translateX(0);
+  animation: fadeInContent 0.5s forwards 0.1s;
+}
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Responsive styles */
 @media (max-width: 1024px) {
   .app-container {
+    grid-template-columns: 1fr;
+  }
+
+  .app-container.sidebar-collapsed,
+  .app-container.sidebar-closed {
     grid-template-columns: 1fr;
   }
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, Home, History, Settings, HelpCircle, Library, UserCircle } from 'lucide-react';
+import { X, Home, History, Settings, HelpCircle, Library, UserCircle, ChevronLeft } from 'lucide-react';
 import Cookies from 'js-cookie';
 import '../styles/Sidebar.css';
 
@@ -15,25 +14,6 @@ interface SidebarProps {
   onToggleYouTubeAPI: (value: boolean) => void;
 }
 
-const sidebarVariants = {
-  open: {
-    x: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 30,
-    },
-  },
-  closed: {
-    x: '-100%',
-    transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 30,
-    },
-  },
-};
-
 const Sidebar: React.FC<SidebarProps> = ({ 
   isOpen, 
   onClose, 
@@ -46,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     const sessionCookie = Cookies.get('session');
@@ -58,7 +39,16 @@ const Sidebar: React.FC<SidebarProps> = ({
       setIsLoggedIn(!!sessionCookie);
     }, 3000);
 
-    return () => clearInterval(intervalId);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const handleHistoryClick = () => {
@@ -75,20 +65,33 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (onClose) onClose();
   };
 
+  // Determine sidebar class based on isOpen and screen size
+  const getSidebarClass = () => {
+    if (!isOpen) {
+      return isMobile ? 'closed' : 'collapsed';
+    }
+    
+    return isMobile ? 'open' : '';
+  };
+
   return (
     <>
-      <motion.div
-        className={`sidebar ${isOpen ? 'open' : ''}`}
-        animate={isOpen ? 'open' : 'closed'}
-        variants={sidebarVariants}
-        initial="closed"
-      >
+      <div className={`sidebar ${getSidebarClass()}`}>
         <div className="sidebar-header">
           <h2>Menu</h2>
-          <button className="close-btn" onClick={toggleSidebar}>
-            <X size={24} />
-          </button>
+          {isMobile ? (
+            <button className="close-btn" onClick={toggleSidebar}>
+              <X size={24} />
+            </button>
+          ) : null}
         </div>
+
+        {/* Toggle button for desktop only */}
+        {!isMobile && (
+          <button className="toggle-btn" onClick={toggleSidebar} title={isOpen ? "Collapse sidebar" : "Expand sidebar"}>
+            <ChevronLeft size={20} />
+          </button>
+        )}
 
         <nav className="sidebar-nav">
           <ul>
@@ -122,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span>Help</span>
               </a>
             </li>
-            {window.innerWidth <= 768 && !isLoggedIn && (
+            {isMobile && !isLoggedIn && (
               <li>
                 <a href="#" onClick={() => onOpenAuth?.()}>
                   <UserCircle size={20} />
@@ -149,9 +152,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         )}
-      </motion.div>
+      </div>
       
-      {isOpen && <div className="sidebar-overlay" onClick={toggleSidebar} />}
+      {isOpen && isMobile && <div className="sidebar-overlay" onClick={toggleSidebar} />}
     </>
   );
 };

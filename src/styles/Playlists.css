@@ -22,7 +22,7 @@
   display: flex;
   flex-direction: column;
   animation: modalSlideIn 0.3s ease;
-  z-index: 9010;
+  z-index: 510;
 }
 
 @keyframes modalSlideIn {
@@ -63,7 +63,7 @@
   margin-bottom: 24px;
 }
 
-.create-playlist-button {
+.create-playlist-button, .import-playlist-button {
   background-color: var(--primary);
   color: var(--dark);
   padding: 8px 16px;
@@ -77,9 +77,19 @@
   gap: 8px;
 }
 
-.create-playlist-button:hover {
+.create-playlist-button:hover, .import-playlist-button:hover {
   transform: scale(1.02);
   filter: brightness(1.1);
+}
+
+.import-playlist-button {
+  background-color: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.import-playlist-button:hover {
+  background-color: rgba(29, 185, 84, 0.1);
 }
 
 .playlists-list {
@@ -131,7 +141,7 @@
   max-width: 800px;
   max-height: 90vh;
   position: relative;
-  z-index: 9020;
+  z-index: 9100; /* Increased z-index to be higher than playlists-modal */
 }
 
 .songs-header {
@@ -262,6 +272,131 @@
   align-items: center;
 }
 
+/* Import Playlist Styles */
+.source-selector {
+  margin-bottom: 24px;
+}
+
+.source-selector h3 {
+  color: var(--light);
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.source-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.source-button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background-color: var(--dark);
+  color: var(--gray);
+  font-size: 14px;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.source-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--light);
+}
+
+.source-button.active {
+  background-color: var(--primary);
+  color: var(--dark);
+  border-color: var(--primary);
+}
+
+.import-section {
+  margin-bottom: 24px;
+}
+
+.input-with-button {
+  display: flex;
+  gap: 8px;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.import-button {
+  background-color: var(--primary);
+  color: var(--dark);
+  padding: 0 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.import-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.import-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.imported-songs {
+  margin: 24px 0;
+}
+
+.imported-songs h3 {
+  color: var(--light);
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.imported-songs-list {
+  background-color: var(--dark);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.imported-song-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.imported-song-thumbnail {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.imported-song-title {
+  color: var(--light);
+  font-size: 14px;
+  display: -webkit-box;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.more-songs {
+  padding: 12px;
+  text-align: center;
+  color: var(--gray);
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .playlists-modal {
     width: 95%;
@@ -290,6 +425,21 @@
     width: 48px;
     height: 48px;
   }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .create-playlist-button, .import-playlist-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .source-buttons {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 480px) {
@@ -306,5 +456,14 @@
 
   .song-item {
     padding: 8px;
+  }
+
+  .input-with-button {
+    flex-direction: column;
+  }
+
+  .import-button {
+    width: 100%;
+    padding: 10px;
   }
 }

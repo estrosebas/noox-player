@@ -23,7 +23,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     correo: '',
-    contrasena: ''
+    contrasena: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,11 +33,12 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
     const sessionCookie = Cookies.get('session');
     if (sessionCookie) {
       const user = JSON.parse(sessionCookie);
-      axios.get(`https://noox.ooguy.com:5030/api/usuarios/${user.usuario_id}`)
-        .then(response => {
+      axios
+        .get(`https://noox.ooguy.com:5030/api/usuarios/${user.usuario_id}`)
+        .then((response) => {
           setUserData(response.data);
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('Error fetching user data:', err);
         });
     }
@@ -46,7 +47,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -61,8 +62,8 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
       showConfirmButton: false,
       background: 'linear-gradient(to right, #141e30, #243b55)',
       customClass: {
-        popup: 'custom-swal-popup'
-      }
+        popup: 'custom-swal-popup',
+      },
     });
   };
 
@@ -73,12 +74,17 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
 
     try {
       if (isLogin) {
-        const response = await axios.post('https://noox.ooguy.com:5030/api/login', {
-          correo: formData.correo,
-          contrasena: formData.contrasena
-        });
+        const response = await axios.post(
+          'https://noox.ooguy.com:5030/api/login',
+          {
+            correo: formData.correo,
+            contrasena: formData.contrasena,
+          }
+        );
 
-        Cookies.set('session', JSON.stringify(response.data.usuario), { expires: 7 });
+        Cookies.set('session', JSON.stringify(response.data.usuario), {
+          expires: 7,
+        });
         setUserData(response.data.usuario);
 
         await Swal.fire({
@@ -89,15 +95,18 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
           showConfirmButton: false,
           background: 'linear-gradient(to right, #141e30, #243b55)',
           customClass: {
-            popup: 'custom-swal-popup'
-          }
+            popup: 'custom-swal-popup',
+          },
         });
       } else {
-        const response = await axios.post('https://noox.ooguy.com:5030/api/usuarios', {
-          nombre: formData.nombre,
-          correo: formData.correo,
-          contrasena: formData.contrasena
-        });
+        const response = await axios.post(
+          'https://noox.ooguy.com:5030/api/usuarios',
+          {
+            nombre: formData.nombre,
+            correo: formData.correo,
+            contrasena: formData.contrasena,
+          }
+        );
 
         await Swal.fire({
           icon: 'success',
@@ -106,9 +115,9 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
           timer: 2000,
           background: 'linear-gradient(to right, #141e30, #243b55)',
           customClass: {
-            popup: 'custom-swal-popup'
+            popup: 'custom-swal-popup',
           },
-          showConfirmButton: false
+          showConfirmButton: false,
         });
       }
 
@@ -123,8 +132,8 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
         text: isLogin ? 'Invalid email or password.' : 'Registration failed.',
         background: 'linear-gradient(to right, #141e30, #243b55)',
         customClass: {
-          popup: 'custom-swal-popup'
-        }
+          popup: 'custom-swal-popup',
+        },
       });
     } finally {
       setLoading(false);
@@ -134,8 +143,13 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
   const handleGoogleSuccess = async (response: any) => {
     try {
       const token = response.credential;
-      const userResponse = await axios.post('https://noox.ooguy.com:5030/api/google-login', { token });
-      Cookies.set('session', JSON.stringify(userResponse.data.usuario), { expires: 7 });
+      const userResponse = await axios.post(
+        'https://noox.ooguy.com:5030/api/google-login',
+        { token }
+      );
+      Cookies.set('session', JSON.stringify(userResponse.data.usuario), {
+        expires: 7,
+      });
       setUserData(userResponse.data.usuario);
 
       await Swal.fire({
@@ -146,8 +160,8 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
         showConfirmButton: false,
         background: 'linear-gradient(to right, #141e30, #243b55)',
         customClass: {
-          popup: 'custom-swal-popup'
-        }
+          popup: 'custom-swal-popup',
+        },
       });
 
       onClose();
@@ -159,8 +173,8 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
         text: 'Google login failed.',
         background: 'linear-gradient(to right, #141e30, #243b55)',
         customClass: {
-          popup: 'custom-swal-popup'
-        }
+          popup: 'custom-swal-popup',
+        },
       });
     }
   };
@@ -169,20 +183,23 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
 
   return (
     <AnimatePresence>
-      <div className="modal-overlay" onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}>
+      <div
+        className="modal-overlay"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
         <motion.div
           className="auth-modal"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <button className="close-button" onClick={onClose}>
             <X size={24} />
           </button>
-          
+
           {userData ? (
             <div className="profile-info">
               <h3>Profile</h3>
@@ -245,8 +262,12 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
 
                 {error && <div className="error-message">{error}</div>}
 
-                <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Processing...' : (isLogin ? 'Login' : 'Sign up')}
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : isLogin ? 'Login' : 'Sign up'}
                 </button>
 
                 {isLogin && (
@@ -262,7 +283,9 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
 
                 <div className="auth-switch">
                   <span>
-                    {isLogin ? "Don't have an account?" : "Already have an account?"}
+                    {isLogin
+                      ? "Don't have an account?"
+                      : 'Already have an account?'}
                     <button type="button" onClick={() => setIsLogin(!isLogin)}>
                       {isLogin ? 'Sign up' : 'Login'}
                     </button>

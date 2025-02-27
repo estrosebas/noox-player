@@ -11,11 +11,18 @@
   padding: 0 16px;
 }
 
+.trending-scroll {
+  max-height: calc(100vh - 250px); /* Adjust based on viewport height minus header and player */
+  overflow-y: auto;
+  padding: 0 16px;
+  margin-bottom: 16px; /* Less margin on desktop */
+}
+
 .trending-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 24px;
-  padding: 0 16px;
+  padding: 0 16px 80px;
   margin-bottom: 24px; /* Base margin for desktop */
 }
 
@@ -170,6 +177,11 @@
 }
 
 @media (max-width: 1024px) {
+  .trending-scroll {
+    max-height: calc(100vh - 280px); /* Adjust for tablet */
+    margin-bottom: 90px; /* Increased margin for tablet */
+  }
+  
   .trending-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
@@ -178,6 +190,11 @@
 }
 
 @media (max-width: 768px) {
+  .trending-scroll {
+    max-height: calc(100vh - 300px); /* Adjust for mobile */
+    margin-bottom: 90px; /* More margin on mobile for player space */
+  }
+  
   .trending-container {
     margin-top: 24px;
     margin-bottom: 90px; /* Add margin to container for mobile */
@@ -193,7 +210,6 @@
     flex-direction: column;
     gap: 8px;
     padding: 0 12px;
-    margin-bottom: 0; /* Remove grid margin since container has margin */
   }
 
   .trending-card {
@@ -250,6 +266,11 @@
 }
 
 @media (max-width: 480px) {
+  .trending-scroll {
+    max-height: calc(100vh - 320px); /* Adjust for smaller screens */
+    margin-bottom: 100px; /* Even more margin on very small screens */
+  }
+  
   .trending-container {
     margin-top: 16px;
     margin-bottom: 100px; /* Increased margin for smaller screens */

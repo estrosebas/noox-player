@@ -3,7 +3,19 @@ import { Play, Pause, SkipBack, SkipForward, Download, Share2, Plus, Volume2, Vo
 import Modal from 'react-modal';
 import Cookies from 'js-cookie';
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 import '../styles/Player.css';
+
+// Import the CapacitorMusicControls plugin
+// We need to use dynamic import to avoid issues with web platform
+let CapacitorMusicControls: any = null;
+if (Capacitor.getPlatform() !== 'web') {
+  import('capacitor-music-controls-plugin').then(module => {
+    CapacitorMusicControls = module.CapacitorMusicControls;
+  }).catch(err => {
+    console.error('Error importing CapacitorMusicControls:', err);
+  });
+}
 
 interface PlaylistItem {
   playlist_id: number;
@@ -14,7 +26,7 @@ interface PlaylistItem {
 }
 
 export interface MusicPlayerRef {
-  playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string) => void;
+  playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string) => void;
 }
 
 interface PlayerProps {
@@ -33,6 +45,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   const [showMobileActions, setShowMobileActions] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressBarRef = useRef<HTMLInputElement | null>(null);
+  const volumeSliderRef = useRef<HTMLInputElement | null>(null);
 
   // Estados para la canción actual y playlist
   const [songDetails, setSongDetails] = useState({
@@ -40,6 +53,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     url: '',
     thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80',
     youtubeUrl: '',
+    author: 'Unknown Artist'
   });
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [currentSongIndex, setCurrentSongIndex] = useState(-1);
@@ -53,6 +67,129 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
 
   // Ref para el título y verificar desbordamiento
   const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // Actualización de notificación con CapacitorMusicControls
+  const updateMusicNotification = () => {
+    if (Capacitor.getPlatform() !== "web" && CapacitorMusicControls) {
+      const coverUrl = songDetails.thumbnail ? songDetails.thumbnail : "";
+      const options = {
+        track: songDetails.name,
+        artist: songDetails.author || "Unknown Artist",
+        ticker: `Now playing ${songDetails.name}`,
+        cover: coverUrl,
+        isPlaying: isPlaying,
+        dismissable: false,
+        hasPrev: true,
+        hasNext: true,
+        hasClose: true,
+        playIcon: "media_play",
+        pauseIcon: "media_pause",
+        prevIcon: "media_prev",
+        nextIcon: "media_next",
+        closeIcon: "media_close",
+        notificationIcon: "notification",
+      };
+
+      CapacitorMusicControls.create(options)
+        .then(() => {
+          // Notificación creada correctamente
+          console.log('Music notification created');
+        })
+        .catch((err: any) => {
+          console.error("Error en CapacitorMusicControls.create:", err);
+        });
+    }
+  };
+
+  useEffect(() => {
+    const handleControlsEvent = (action: any) => {
+      console.log("controlsNotification event:", action);
+      switch (action.message) {
+        case "music-controls-play":
+          if (!isPlaying) togglePlayPause();
+          break;
+        case "music-controls-pause":
+          if (isPlaying) togglePlayPause();
+          break;
+        case "music-controls-next":
+          handleNextSong();
+          break;
+        case "music-controls-previous":
+          handlePrevSong();
+          break;
+        case "music-controls-destroy":
+          break;
+        default:
+          break;
+      }
+    };
+
+    if (Capacitor.getPlatform() === "android") {
+      document.addEventListener("controlsNotification", (event: any) => {
+        handleControlsEvent(event);
+      });
+    }
+
+    return () => {
+      if (Capacitor.getPlatform() === "android") {
+        document.removeEventListener("controlsNotification", handleControlsEvent);
+      }
+    };
+  }, [isPlaying]);
+
+  useEffect(() => {
+    updateMusicNotification();
+  }, [songDetails]);
+
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== "web" && CapacitorMusicControls) {
+      CapacitorMusicControls.updateIsPlaying({ isPlaying });
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    return () => {
+      if (Capacitor.getPlatform() !== "web" && CapacitorMusicControls) {
+        CapacitorMusicControls.destroy?.()
+          .catch((err: any) => console.error("Error destruyendo music controls:", err));
+      }
+    };
+  }, []);
+
+  // Browser Media Session API
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: songDetails.name,
+        artist: songDetails.author || "Unknown Artist",
+        album: "",
+        artwork: [
+          { src: songDetails.thumbnail, sizes: "96x96", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "128x128", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "192x192", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "256x256", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "384x384", type: "image/png" },
+          { src: songDetails.thumbnail, sizes: "512x512", type: "image/png" },
+        ],
+      });
+
+      navigator.mediaSession.setActionHandler("play", () => {
+        if (!isPlaying) togglePlayPause();
+      });
+      
+      navigator.mediaSession.setActionHandler("pause", () => {
+        if (isPlaying) togglePlayPause();
+      });
+      
+      navigator.mediaSession.setActionHandler("nexttrack", () => {
+        handleNextSong();
+      });
+      
+      navigator.mediaSession.setActionHandler("previoustrack", () => {
+        handlePrevSong();
+      });
+    }
+  }, [songDetails, isPlaying]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -93,27 +230,46 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   }, [progress]);
 
+  // Efecto para actualizar la variable CSS del volumen
+  useEffect(() => {
+    if (volumeSliderRef.current) {
+      volumeSliderRef.current.style.setProperty('--volume-percent', `${volume * 100}%`);
+    }
+  }, [volume]);
+
+  // Helper function to add song to history
+  const addSongToHistory = (name: string, url: string, thumbnail: string, author?: string) => {
+    // Guardar en historial
+    const newSong = { title: name, url, thumbnail, author };
+    const history = JSON.parse(localStorage.getItem('songHistory') || '[]');
+    localStorage.setItem('songHistory', JSON.stringify([newSong, ...history]));
+  };
+
   useImperativeHandle(ref, () => ({
-    playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string) => {
-      if (!url) {
+    playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string) => {
+      if (!name || !url) {
         if (audioRef.current) audioRef.current.pause();
         setIsPlaying(false);
         return;
       }
-      setSongDetails({ name, url, thumbnail, youtubeUrl });
+      setSongDetails({ 
+        name, 
+        url, 
+        thumbnail, 
+        youtubeUrl, 
+        author: author || 'Unknown Artist' 
+      });
       setIsPlaying(true);
+      addSongToHistory(name, youtubeUrl, thumbnail, author);
       if (audioRef.current) {
         audioRef.current.src = url;
-        audioRef.current.play().catch(error => {
-          if (error.name !== 'AbortError') {
-            console.error('Error playing audio:', error);
+        audioRef.current.play().catch((error) => {
+          if (error.name !== "AbortError") {
+            console.error("Error playing audio:", error);
           }
+          // Si es AbortError, lo ignoramos
         });
       }
-      // Guardar en historial
-      const newSong = { title: name, url: youtubeUrl, thumbnail };
-      const history = JSON.parse(localStorage.getItem('songHistory') || '[]');
-      localStorage.setItem('songHistory', JSON.stringify([newSong, ...history]));
     }
   }));
 
@@ -263,7 +419,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           <div className="track-title-container">
             <h4 ref={titleRef} className="track-title">{songDetails.name}</h4>
           </div>
-          <p className="track-artist">Unknown Artist</p>
+          <p className="track-artist">{songDetails.author}</p>
         </div>
         <div className="track-mobile-controls">
           <button 
@@ -310,6 +466,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           </button>
           {showVolumeControl && (
             <input
+              ref={volumeSliderRef}
               type="range"
               value={volume * 100}
               onChange={handleVolumeChange}
@@ -360,6 +517,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
             <span>Volume</span>
           </div>
           <input
+            ref={volumeSliderRef}
             type="range"
             value={volume * 100}
             onChange={handleVolumeChange}

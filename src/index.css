@@ -61,19 +61,20 @@ a {
 /* Layout principal */
 .app-container {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  grid-template-rows: 1fr 90px;
+  grid-template-rows: 1fr 90px; /* 90px para el Player */
   height: 100vh;
   overflow: hidden;
 }
 
 .main-content {
-  grid-column: 2;
-  grid-row: 1;
+  flex: 1;
   overflow-y: auto;
   padding: 24px;
+  padding-bottom: 120px; /* Espacio extra para que no se solape con el reproductor */
   background: linear-gradient(to bottom, #404040, var(--dark));
+  transition: all 0.3s ease;
 }
+
 
 .main-content h1 {
   margin-bottom: 24px;
@@ -220,4 +221,18 @@ a {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
   }
+}
+.content-wrapper {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+.sidebar {
+  width: 240px;
+  transition: width 0.3s ease;
+}
+/* Ejemplo: cuando el sidebar esté colapsado */
+.sidebar.collapsed {
+  width: 60px;
 }

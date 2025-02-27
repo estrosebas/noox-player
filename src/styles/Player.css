@@ -9,7 +9,7 @@
   align-items: center;
   gap: 24px;
   border-top: 1px solid #404040;
-  z-index: 8000;
+  z-index: 9000;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -73,7 +73,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
@@ -208,33 +207,59 @@
 
 .volume-slider {
   width: 100px;
-  height: 6px; /* Increased from 4px to 6px */
+  height: 8px; /* Increased from 6px to 8px to match progress bar */
   background-color: #404040;
-  border-radius: 3px;
+  border-radius: 4px; /* Increased to match the new height */
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
+  position: relative;
 }
 
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px; /* Increased from 12px to 14px */
-  height: 14px; /* Increased from 12px to 14px */
+  width: 16px; /* Increased from 14px to 16px to match progress bar */
+  height: 16px; /* Increased from 14px to 16px to match progress bar */
   background-color: var(--primary);
   border-radius: 50%;
   cursor: pointer;
-  margin-top: -4px;
+  margin-top: -4px; /* Center the thumb vertically */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  background-color: #1ed760; /* Brighter green on hover */
 }
 
 .volume-slider::-moz-range-thumb {
-  width: 14px; /* Increased from 12px to 14px */
-  height: 14px; /* Increased from 12px to 14px */
+  width: 16px; /* Increased from 14px to 16px to match progress bar */
+  height: 16px; /* Increased from 14px to 16px to match progress bar */
   background-color: var(--primary);
   border-radius: 50%;
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  background-color: #1ed760; /* Brighter green on hover */
+}
+
+/* Add a highlight for the filled portion of the volume slider */
+.volume-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--volume-percent, 0%), #404040 var(--volume-percent, 0%));
+}
+
+.volume-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--volume-percent, 0%), #404040 var(--volume-percent, 0%));
 }
 
 .share-tooltip {

@@ -6,7 +6,7 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
-  z-index: 9000;
+  z-index: 9200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,7 +19,7 @@
   width: 400px;
   max-width: 90vw;
   position: relative;
-  z-index: 9010;
+  z-index: 9210;
 }
 
 .close-button {
@@ -200,4 +200,10 @@
   .btn-primary {
     padding: 10px;
   }
+}
+.custom-swal-popup {
+  z-index: 20000 !important;
+}
+.swal2-popup {
+  z-index: 20000 !important; /* Ensure SweetAlert appears above other elements */
 }
