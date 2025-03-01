@@ -246,6 +246,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   }, [volume]);
 
+  
   // Helper function to add song to history
   const addSongToHistory = (name: string, url: string, thumbnail: string, author?: string) => {
     // Guardar en historial
@@ -253,6 +254,18 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     const history = JSON.parse(localStorage.getItem('songHistory') || '[]');
     localStorage.setItem('songHistory', JSON.stringify([newSong, ...history]));
   };
+  useEffect(() => {
+  const storedPlaylistData = localStorage.getItem('currentPlaylistData');
+  if (storedPlaylistData) {
+    const parsedData = JSON.parse(storedPlaylistData);
+    console.log("Loaded playlist from localStorage:", parsedData);
+
+    if (parsedData.playlist && parsedData.playlist.length > 0) {
+      setPlaylist(parsedData.playlist);
+      setCurrentSongIndex(parsedData.currentIndex || 0);
+    }
+  }
+}, []);
 
   useImperativeHandle(ref, () => ({
     playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string, newPlaylist?: any[]) => {
@@ -343,19 +356,55 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
       setShowVolumeControl(!showVolumeControl);
     }
   };
-
-  const handleNextSong = () => {
-    if (playlist.length === 0) return;
-    let nextIndex = currentSongIndex + 1;
-    if (nextIndex >= playlist.length) nextIndex = 0;
-    setCurrentSongIndex(nextIndex);
+  const updateCurrentIndexInStorage = (newIndex: number) => {
+    const storedPlaylistData = localStorage.getItem('currentPlaylistData');
+    if (storedPlaylistData) {
+      const parsedData = JSON.parse(storedPlaylistData);
+      parsedData.currentIndex = newIndex;
+      localStorage.setItem('currentPlaylistData', JSON.stringify(parsedData));
+    }
   };
-
+  const handleNextSong = () => {
+    const storedPlaylistData = localStorage.getItem('currentPlaylistData');
+    if (storedPlaylistData) {
+      const parsedData = JSON.parse(storedPlaylistData);
+      const updatedPlaylist = parsedData.playlist;
+      const latestIndex = parsedData.currentIndex;  // 🛑 Cargar el índice más reciente
+  
+      if (updatedPlaylist.length === 0) {
+        console.log("No hay canciones en la playlist");
+        return;
+      }
+  
+      let nextIndex = latestIndex + 1;  // 🛑 Usar el índice más reciente en vez de `currentSongIndex`
+      if (nextIndex >= updatedPlaylist.length) nextIndex = 0;
+  
+      console.log("Next song index:", nextIndex, "Song:", updatedPlaylist[nextIndex]);
+      setPlaylist(updatedPlaylist);
+      setCurrentSongIndex(nextIndex);
+      updateCurrentIndexInStorage(nextIndex);
+    }
+  };
   const handlePrevSong = () => {
-    if (playlist.length === 0) return;
-    let prevIndex = currentSongIndex - 1;
-    if (prevIndex < 0) prevIndex = playlist.length - 1;
-    setCurrentSongIndex(prevIndex);
+    const storedPlaylistData = localStorage.getItem('currentPlaylistData');
+    if (storedPlaylistData) {
+      const parsedData = JSON.parse(storedPlaylistData);
+      const updatedPlaylist = parsedData.playlist;
+      const latestIndex = parsedData.currentIndex;  // 🛑 Cargar el índice más reciente
+  
+      if (updatedPlaylist.length === 0) {
+        console.log("No hay canciones en la playlist");
+        return;
+      }
+  
+      let prevIndex = latestIndex - 1;  // 🛑 Usar el índice más reciente en vez de `currentSongIndex`
+      if (prevIndex < 0) prevIndex = updatedPlaylist.length - 1;
+  
+      console.log("Previous song index:", prevIndex, "Song:", updatedPlaylist[prevIndex]);
+      setPlaylist(updatedPlaylist);
+      setCurrentSongIndex(prevIndex);
+      updateCurrentIndexInStorage(prevIndex);
+    }
   };
 
   const handleDownload = async () => {
@@ -534,13 +583,13 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           >
             <Youtube size={20} />
           </button>
-          <button onClick={handlePrevSong} className="control-button">
+          <button onClick={() => { console.log("Prev button clicked"); handlePrevSong(); }} className="control-button">
             <SkipBack size={20} />
           </button>
           <button onClick={togglePlayPause} className="play-button">
             {isPlaying ? <Pause size={24} /> : <Play size={24} />}
           </button>
-          <button onClick={handleNextSong} className="control-button">
+          <button onClick={() => { console.log("Next button clicked"); handleNextSong(); }} className="control-button">
             <SkipForward size={20} />
           </button>
           <button 
