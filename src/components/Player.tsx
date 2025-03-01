@@ -1,5 +1,5 @@
 import React, { useState, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Download, Share2, Plus, Volume2, VolumeX, X } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Download, Share2, Plus, Volume2, VolumeX, X, Repeat, Youtube, Mic } from 'lucide-react';
 import Modal from 'react-modal';
 import Cookies from 'js-cookie';
 import axios from 'axios';
@@ -26,7 +26,7 @@ interface PlaylistItem {
 }
 
 export interface MusicPlayerRef {
-  playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string) => void;
+  playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string, newPlaylist?: any[]) => void;
 }
 
 interface PlayerProps {
@@ -43,6 +43,12 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [showMobileVolumeControl, setShowMobileVolumeControl] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(false);
+  const [isRepeatEnabled, setIsRepeatEnabled] = useState(false);
+  const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
+  const [wasPlayingBeforeModal, setWasPlayingBeforeModal] = useState(false);
+  const [isLyricsModalOpen, setIsLyricsModalOpen] = useState(false);
+  const [lyrics, setLyrics] = useState<{artista: string, cancion: string, letra: string} | null>(null);
+  const [loadingLyrics, setLoadingLyrics] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressBarRef = useRef<HTMLInputElement | null>(null);
   const volumeSliderRef = useRef<HTMLInputElement | null>(null);
@@ -82,11 +88,15 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
         hasPrev: true,
         hasNext: true,
         hasClose: true,
+        hasRepeat: true,
+        hasYoutube: true,
         playIcon: "media_play",
         pauseIcon: "media_pause",
         prevIcon: "media_prev",
         nextIcon: "media_next",
         closeIcon: "media_close",
+        repeatIcon: "media_repeat",
+        youtubeIcon: "media_youtube",
         notificationIcon: "notification",
       };
 
@@ -116,6 +126,12 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           break;
         case "music-controls-previous":
           handlePrevSong();
+          break;
+        case "music-controls-repeat":
+          toggleRepeat();
+          break;
+        case "music-controls-youtube":
+          openYoutubeModal();
           break;
         case "music-controls-destroy":
           break;
@@ -192,18 +208,11 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   }, [songDetails, isPlaying]);
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      const storedPlaylist = localStorage.getItem('currentPlaylist');
-      if (storedPlaylist) {
-        setPlaylist(JSON.parse(storedPlaylist));
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    handleStorageChange();
-
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    if (currentSongIndex !== -1 && playlist.length > 0) {
+      const song = playlist[currentSongIndex];
+      props.fetchAudio(song.url, song.thumbnail);
+    }
+  }, [currentSongIndex]);
 
   // Efecto para activar la animación en el título si éste desborda
   useEffect(() => {
@@ -246,12 +255,13 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   };
 
   useImperativeHandle(ref, () => ({
-    playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string) => {
+    playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string, newPlaylist?: any[]) => {
       if (!name || !url) {
         if (audioRef.current) audioRef.current.pause();
         setIsPlaying(false);
         return;
       }
+      
       setSongDetails({ 
         name, 
         url, 
@@ -259,8 +269,16 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
         youtubeUrl, 
         author: author || 'Unknown Artist' 
       });
+      
+      if (newPlaylist && newPlaylist.length > 0) {
+        setPlaylist(newPlaylist);
+        const songIndex = newPlaylist.findIndex(song => song.url === url);
+        setCurrentSongIndex(songIndex >= 0 ? songIndex : 0);
+      }
+      
       setIsPlaying(true);
       addSongToHistory(name, youtubeUrl, thumbnail, author);
+      
       if (audioRef.current) {
         audioRef.current.src = url;
         audioRef.current.play().catch((error) => {
@@ -331,8 +349,6 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     let nextIndex = currentSongIndex + 1;
     if (nextIndex >= playlist.length) nextIndex = 0;
     setCurrentSongIndex(nextIndex);
-    const nextSong = playlist[nextIndex];
-    props.fetchAudio(nextSong.url, nextSong.thumbnail);
   };
 
   const handlePrevSong = () => {
@@ -340,8 +356,6 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     let prevIndex = currentSongIndex - 1;
     if (prevIndex < 0) prevIndex = playlist.length - 1;
     setCurrentSongIndex(prevIndex);
-    const prevSong = playlist[prevIndex];
-    props.fetchAudio(prevSong.url, prevSong.thumbnail);
   };
 
   const handleDownload = async () => {
@@ -410,6 +424,85 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  const toggleRepeat = () => {
+    setIsRepeatEnabled(!isRepeatEnabled);
+    if (audioRef.current) {
+      audioRef.current.loop = !isRepeatEnabled;
+    }
+    
+    // Update notification for mobile
+    if (Capacitor.getPlatform() !== "web" && CapacitorMusicControls) {
+      CapacitorMusicControls.updateIsRepeat({ isRepeat: !isRepeatEnabled });
+    }
+  };
+
+  const openYoutubeModal = () => {
+    // Save current playing state
+    setWasPlayingBeforeModal(isPlaying);
+    
+    // Pause the audio if it's playing
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+    
+    setIsYoutubeModalOpen(true);
+  };
+
+  const closeYoutubeModal = () => {
+    setIsYoutubeModalOpen(false);
+    
+    // Resume playback if it was playing before
+    if (wasPlayingBeforeModal && audioRef.current) {
+      audioRef.current.play().catch(err => {
+        console.error("Error resuming playback:", err);
+      });
+      setIsPlaying(true);
+    }
+  };
+
+  const openLyricsModal = async () => {
+    if (!songDetails.name) return;
+    
+    setIsLyricsModalOpen(true);
+    setLoadingLyrics(true);
+    setLyrics(null);
+    
+    try {
+      const response = await axios.get(
+        `https://noox.ooguy.com:5030/letra?cancion=${encodeURIComponent(songDetails.name)}`
+      );
+      setLyrics(response.data);
+    } catch (error) {
+      console.error('Error fetching lyrics:', error);
+    } finally {
+      setLoadingLyrics(false);
+    }
+  };
+
+  const closeLyricsModal = () => {
+    setIsLyricsModalOpen(false);
+  };
+
+  const getYoutubeEmbedUrl = () => {
+    if (!songDetails.youtubeUrl) return '';
+    
+    // Extract video ID from YouTube URL
+    const videoIdMatch = songDetails.youtubeUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (!videoIdMatch) return '';
+    
+    const videoId = videoIdMatch[1];
+    return `https://www.youtube.com/embed/${videoId}?autoplay=0&origin=${window.location.origin}`;
+  };
+
+  const handleSongEnd = () => {
+    if (isRepeatEnabled) {
+      // If repeat is enabled, the audio element's loop property will handle it
+      return;
+    }
+    handleNextSong();
+  };
+
   return (
     <div className="player">
       <div className="track-info">
@@ -433,6 +526,14 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
 
       <div className="player-controls">
         <div className="control-buttons">
+          <button 
+            onClick={openYoutubeModal} 
+            className="control-button"
+            title="Watch on YouTube"
+            disabled={!songDetails.youtubeUrl}
+          >
+            <Youtube size={20} />
+          </button>
           <button onClick={handlePrevSong} className="control-button">
             <SkipBack size={20} />
           </button>
@@ -442,6 +543,14 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           <button onClick={handleNextSong} className="control-button">
             <SkipForward size={20} />
           </button>
+          <button 
+            onClick={toggleRepeat} 
+            className={`control-button ${isRepeatEnabled ? 'active' : ''}`}
+            title={isRepeatEnabled ? "Disable repeat" : "Enable repeat"}
+          >
+            <Repeat size={20} />
+          </button>
+          
         </div>
         <div className="progress-container">
           <span className="time">{currentTime}</span>
@@ -476,6 +585,14 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
             />
           )}
         </div>
+        <button 
+          onClick={openLyricsModal} 
+          className="control-button" 
+          title="View Lyrics"
+          disabled={!songDetails.name || songDetails.name === 'No track playing'}
+        >
+          <Mic size={20} />
+        </button>
         <button onClick={handleOpenAddModal} className="control-button" title="Add to Playlist">
           <Plus size={20} />
         </button>
@@ -493,6 +610,10 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           <button className="mobile-action-item" onClick={toggleVolumeControl}>
             <Volume2 size={20} />
             <span>Volume</span>
+          </button>
+          <button className="mobile-action-item" onClick={openLyricsModal} disabled={!songDetails.name || songDetails.name === 'No track playing'}>
+            <Mic size={20} />
+            <span>View Lyrics</span>
           </button>
           <button className="mobile-action-item" onClick={handleOpenAddModal}>
             <Plus size={20} />
@@ -563,11 +684,79 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
         </div>
       </Modal>
 
+      {/* YouTube Modal */}
+      <Modal
+        isOpen={isYoutubeModalOpen}
+        onRequestClose={closeYoutubeModal}
+        className="youtube-modal"
+        overlayClassName="modal-overlay"
+      >
+        <div className="modal-header">
+          <h3>Watch on YouTube</h3>
+          <button onClick={closeYoutubeModal} className="modal-close">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="youtube-iframe-container">
+          {songDetails.youtubeUrl && (
+            <iframe
+              src={getYoutubeEmbedUrl()}
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          )}
+        </div>
+      </Modal>
+
+      {/* Lyrics Modal */}
+      <Modal
+        isOpen={isLyricsModalOpen}
+        onRequestClose={closeLyricsModal}
+        className="lyrics-modal"
+        overlayClassName="modal-overlay"
+      >
+        <div className="modal-header">
+          <h3>Lyrics</h3>
+          <button onClick={closeLyricsModal} className="modal-close">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="lyrics-content">
+          {loadingLyrics ? (
+            <div className="lyrics-loading">
+              <div className="lyrics-spinner"></div>
+              <p>Loading lyrics...</p>
+            </div>
+          ) : lyrics ? (
+            <div className="lyrics-display">
+              <div className="lyrics-info">
+                <h4>{lyrics.cancion}</h4>
+                <p className="lyrics-artist">{lyrics.artista}</p>
+              </div>
+              <div className="lyrics-text">
+                {lyrics.letra.split('\n').map((line, index) => (
+                  <p key={index} className={line.trim() === '' ? 'lyrics-break' : ''}>
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="lyrics-not-found">
+              <p>No lyrics found for this song.</p>
+            </div>
+          )}
+        </div>
+      </Modal>
+
       <audio
         ref={audioRef}
         onTimeUpdate={handleProgress}
         onLoadedMetadata={handleProgress}
-        onEnded={handleNextSong}
+        onEnded={handleSongEnd}
+        loop={isRepeatEnabled}
       />
     </div>
   );
