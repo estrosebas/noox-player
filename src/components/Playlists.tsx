@@ -131,9 +131,34 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
       thumbnail: song.url_thumbnail,
     }));
 
-    localStorage.setItem('currentPlaylist', JSON.stringify(formattedSongs));
-    window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: formattedSongs }));
+    // Guardar en localStorage y disparar evento personalizado
+    const playlistData = { playlist: formattedSongs, currentIndex: 0 };
+    localStorage.setItem('currentPlaylistData', JSON.stringify(playlistData));
+    window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: playlistData }));
+    
     onSongSelect(formattedSongs[0]);
+    setSongsModalOpen(false);
+  };
+
+  const handleSelectSong = (song: Song, index: number) => {
+    const formattedSongs = songs.map(s => ({
+      title: s.nombre,
+      id: s.cancion_id.toString(),
+      url: s.url_cancion,
+      thumbnail: s.url_thumbnail,
+    }));
+    
+    // Guardar en localStorage y disparar evento personalizado
+    const playlistData = { playlist: formattedSongs, currentIndex: index };
+    localStorage.setItem('currentPlaylistData', JSON.stringify(playlistData));
+    window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: playlistData }));
+    
+    onSongSelect({
+      title: song.nombre,
+      id: song.cancion_id.toString(),
+      url: song.url_cancion,
+      thumbnail: song.url_thumbnail
+    });
     setSongsModalOpen(false);
   };
 
@@ -469,7 +494,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
                 ) : songs.length === 0 ? (
                   <div className="empty-state">No songs in this playlist</div>
                 ) : (
-                  songs.map(song => (
+                  songs.map((song, index) => (
                     <div key={song.cancion_id} className="song-item">
                       <img
                         src={song.url_thumbnail}
@@ -482,12 +507,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
                       <div className="song-actions">
                         <button
                           className="action-button"
-                          onClick={() => onSongSelect({
-                            title: song.nombre,
-                            id: song.cancion_id.toString(),
-                            url: song.url_cancion,
-                            thumbnail: song.url_thumbnail
-                          })}
+                          onClick={() => handleSelectSong(song, index)}
                         >
                           <Play size={16} />
                         </button>
