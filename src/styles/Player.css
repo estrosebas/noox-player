@@ -1,0 +1,532 @@
+/* Player Styles */
+.player {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  background-color: var(--dark-light);
+  padding: 16px 24px;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+  gap: 24px;
+  border-top: 1px solid #404040;
+  z-index: 9000;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+}
+
+.track-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 180px;
+}
+
+.track-image {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.track-details {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Contenedor para el título con ancho máximo */
+.track-title-container {
+  max-width: 200px; /* Ajusta el ancho máximo según convenga */
+  overflow: hidden;
+}
+
+/* Estilo base para el título */
+.track-title {
+  color: var(--light);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  /* Se eliminan overflow y text-overflow para permitir la animación */
+  font-size: 14px;
+}
+
+/* Clase que activa la animación si el título desborda */
+.track-title.scrolling {
+  animation: scrollText var(--scroll-duration, 10s) linear infinite;
+}
+
+.track-artist {
+  color: var(--gray);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-mobile-controls {
+  display: none;
+}
+
+.player-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.control-buttons {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.control-button {
+  color: var(--light);
+  transition: all 0.2s;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-button:hover {
+  color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.mobile-more {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.play-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--light);
+  color: var(--dark);
+  display: grid;
+  place-items: center;
+  transition: all 0.2s;
+}
+
+.play-button:hover {
+  transform: scale(1.1);
+  background-color: var(--primary);
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.time {
+  color: var(--gray);
+  font-size: 12px;
+  min-width: 35px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px; /* Increased from 4px to 8px for a thicker bar */
+  background-color: #404040;
+  border-radius: 4px; /* Increased to match the new height */
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+}
+
+.progress-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; /* Increased from 12px to 16px */
+  height: 16px; /* Increased from 12px to 16px */
+  background-color: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px; /* Center the thumb vertically */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Add shadow for depth */
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.progress-bar::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  background-color: #1ed760; /* Brighter green on hover */
+}
+
+.progress-bar::-moz-range-thumb {
+  width: 16px; /* Increased from 12px to 16px */
+  height: 16px; /* Increased from 12px to 16px */
+  background-color: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Add shadow for depth */
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.progress-bar::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  background-color: #1ed760; /* Brighter green on hover */
+}
+
+/* Add a highlight for the filled portion of the progress bar */
+.progress-bar::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--progress-percent, 0%), #404040 var(--progress-percent, 0%));
+}
+
+.progress-bar::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--progress-percent, 0%), #404040 var(--progress-percent, 0%));
+}
+
+.player-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  min-width: 180px;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.volume-slider {
+  width: 100px;
+  height: 8px; /* Increased from 6px to 8px to match progress bar */
+  background-color: #404040;
+  border-radius: 4px; /* Increased to match the new height */
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; /* Increased from 14px to 16px to match progress bar */
+  height: 16px; /* Increased from 14px to 16px to match progress bar */
+  background-color: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px; /* Center the thumb vertically */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  background-color: #1ed760; /* Brighter green on hover */
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 16px; /* Increased from 14px to 16px to match progress bar */
+  height: 16px; /* Increased from 14px to 16px to match progress bar */
+  background-color: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  background-color: #1ed760; /* Brighter green on hover */
+}
+
+/* Add a highlight for the filled portion of the volume slider */
+.volume-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--volume-percent, 0%), #404040 var(--volume-percent, 0%));
+}
+
+.volume-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--volume-percent, 0%), #404040 var(--volume-percent, 0%));
+}
+
+.share-tooltip {
+  position: absolute;
+  top: -30px;
+  right: 0;
+  background-color: var(--dark);
+  color: var(--light);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.mobile-actions-menu {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background-color: var(--dark);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.2s ease;
+  width: 200px;
+  z-index: 8100;
+}
+
+.mobile-action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  color: var(--light);
+  transition: all 0.2s;
+}
+
+.mobile-action-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-action-item span {
+  font-size: 14px;
+}
+
+/* Mobile volume control */
+.mobile-volume-control {
+  position: fixed;
+  bottom: 100px;
+  left: 0;
+  right: 0;
+  background-color: var(--dark);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 8200;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.2s ease;
+}
+
+.mobile-volume-control .volume-slider {
+  width: 90%;
+  height: 8px; /* Increased from 6px to 8px */
+}
+
+.mobile-volume-control .volume-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--light);
+  font-size: 14px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9100;
+}
+
+.modal {
+  background-color: var(--dark-light);
+  border-radius: 8px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  z-index: 9110;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-close {
+  color: var(--gray);
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--light);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.playlist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.playlist-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-add {
+  color: var(--gray);
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.btn-add:hover {
+  color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Keyframes para el efecto de desplazamiento del título */
+@keyframes scrollText {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-1 * var(--overflow)));
+  }
+}
+
+@media (max-width: 1024px) {
+  .player {
+    grid-template-columns: auto 1fr auto;
+    padding: 12px 16px;
+    gap: 16px;
+    height: 80px;
+  }
+
+  .track-info {
+    min-width: auto;
+    flex: 0 1 auto;
+  }
+
+  .track-image {
+    width: 48px;
+    height: 48px;
+  }
+
+  .player-actions {
+    min-width: auto;
+  }
+
+  .volume-control {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .player {
+    grid-template-columns: 1fr;
+    padding: 8px 12px;
+    gap: 8px;
+    height: auto;
+  }
+
+  .track-info {
+    order: 1;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .track-mobile-controls {
+    display: flex;
+    gap: 12px;
+  }
+
+  .player-controls {
+    order: 0;
+    margin-bottom: 4px;
+  }
+
+  .player-actions {
+    display: none;
+  }
+
+  .control-buttons {
+    gap: 16px;
+  }
+
+  .progress-container {
+    padding: 0;
+  }
+
+  .mobile-actions-menu {
+    display: block;
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .player {
+    padding: 8px;
+  }
+
+  .track-image {
+    width: 40px;
+    height: 40px;
+  }
+
+  .track-title {
+    font-size: 14px;
+  }
+
+  .track-artist {
+    font-size: 12px;
+  }
+
+  .control-buttons {
+    gap: 12px;
+  }
+
+  .time {
+    font-size: 11px;
+    min-width: 32px;
+  }
+
+  .progress-container {
+    gap: 6px;
+  }
+}
