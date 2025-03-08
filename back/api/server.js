@@ -7,7 +7,7 @@ const cors = require("cors");
 const morgan = require("morgan"); 
 const { SSL_OPTIONS, CONFIG } = require("./config/db_credenciales");
 
-// Importar rutas
+// Importar todas las rutas
 const usuarios = require("./routes/usuarios");
 const canciones = require("./routes/canciones");
 const googleAuth = require("./routes/googleAuth");
@@ -87,10 +87,8 @@ async function precacheSongs() {
     console.error("❌ Error en el precacheo de canciones:", error);
   }
 }
-
 // Ejecuta precacheSongs cada 70 minutos (70 * 60 * 1000 ms)
 setInterval(precacheSongs, 70 * 60 * 1000);
-
 // Opcionalmente, ejecuta la función al iniciar el servidor
 precacheSongs();
 
