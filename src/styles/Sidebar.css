@@ -388,6 +388,9 @@ input:checked + .slider:before {
   .btn-danger {
     padding: 10px;
   }
+  .sidebar-settings {
+    padding-bottom: 120px;
+  }
 }
 
 /* Personalizar alertas */

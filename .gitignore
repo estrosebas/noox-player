@@ -12,7 +12,8 @@ dist
 dist-ssr
 *.local
 
-back/server.js
+back/api/.env
+back/api/node_modules
 src-tauri
 src-tauri/target/
 src-tauri/Cargo.lock
