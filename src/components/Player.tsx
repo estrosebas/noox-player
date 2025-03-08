@@ -1,5 +1,5 @@
 import React, { useState, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Download, Share2, Plus, Volume2, VolumeX, X, Repeat, Youtube, Mic } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Download, Share2, Plus, Volume2, VolumeX, X, Repeat, Youtube, Mic,  Loader2, Check  } from 'lucide-react';
 import Modal from 'react-modal';
 import Cookies from 'js-cookie';
 import axios from 'axios';
@@ -47,11 +47,12 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [wasPlayingBeforeModal, setWasPlayingBeforeModal] = useState(false);
   const [isLyricsModalOpen, setIsLyricsModalOpen] = useState(false);
-  const [lyrics, setLyrics] = useState<{artista: string, cancion: string, letra: string} | null>(null);
+  const [, setLyrics] = useState<{artista: string, cancion: string, letra: string} | null>(null);
   const [loadingLyrics, setLoadingLyrics] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressBarRef = useRef<HTMLInputElement | null>(null);
   const volumeSliderRef = useRef<HTMLInputElement | null>(null);
+  //si es necesario definiser lyrics
 
   // Estados para la canción actual y playlist
   const [songDetails, setSongDetails] = useState({
@@ -74,6 +75,24 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   // Ref para el título y verificar desbordamiento
   const titleRef = useRef<HTMLHeadingElement>(null);
 
+  ///estados para el lrc
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [loadingLanguages, setLoadingLanguages] = useState<boolean>(false);
+  // Estado para almacenar la letra en formato LRC sin procesar
+  // Estado para almacenar la letra parseada: array de { time, text }
+  const [parsedLyrics, setParsedLyrics] = useState<Array<{ time: number; text: string }>>([]);
+  // Estado para la línea activa según el tiempo actual
+  const [activeLineIndex, setActiveLineIndex] = useState<number>(-1);
+  // Para tener el tiempo en segundos (además del formato mm:ss)
+  const [currentTimeSeconds, setCurrentTimeSeconds] = useState<number>(0);
+
+  const [activeTab, setActiveTab] = useState<'normal' | 'synced'>('normal');
+  const [normalLyrics, setNormalLyrics] = useState<string | null>(null);
+  const [loadingNormalLyrics, setLoadingNormalLyrics] = useState<boolean>(false);
+
+  const [previousSongUrl, setPreviousSongUrl] = useState<string | null>(null);
+  //const [loading, setLoading] = useState(false);
   // Actualización de notificación con CapacitorMusicControls
   const updateMusicNotification = () => {
     if (Capacitor.getPlatform() !== "web" && CapacitorMusicControls) {
@@ -110,7 +129,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
         });
     }
   };
-
+  
   useEffect(() => {
     const handleControlsEvent = (action: any) => {
       console.log("controlsNotification event:", action);
@@ -309,16 +328,18 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     const { currentTime, duration } = audioRef.current;
     const progressValue = duration ? (currentTime / duration) * 100 : 0;
     setProgress(progressValue);
-
+  
     const formatTime = (time: number) => {
       const minutes = Math.floor(time / 60);
       const seconds = Math.floor(time % 60).toString().padStart(2, '0');
       return `${minutes}:${seconds}`;
     };
-
+  
     setCurrentTime(formatTime(currentTime));
+    setCurrentTimeSeconds(currentTime);
     setDurationTime(formatTime(duration || 0));
   };
+  
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -406,23 +427,37 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
       updateCurrentIndexInStorage(prevIndex);
     }
   };
+  const [status, setStatus] = useState('idle');
+  const handleDownload = () => {
+    if (!songDetails.url || status === 'loading') return;
+    setStatus('loading');
+    const downloadUrl = `https://noox.ooguy.com:5030/api/download?url=${encodeURIComponent(songDetails.youtubeUrl)}`;
+    
+    // Inicia la descarga creando y clickeando un enlace temporal
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Simula la finalización del proceso (por ejemplo, 2 segundos después)
+    setTimeout(() => {
+      setStatus('success');
+      // Vuelve al estado inactivo después de mostrar el éxito por 2 segundos
+      setTimeout(() => {
+        setStatus('idle');
+      }, 2000);
+    }, 2000);
+  };
 
-  const handleDownload = async () => {
-    if (!songDetails.url) return;
-    try {
-      const response = await fetch(songDetails.url);
-      if (!response.ok) throw new Error('Download failed');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${songDetails.name}.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Error downloading:', error);
+  const renderIcon = () => {
+    switch(status) {
+      case 'loading':
+        return <Loader2 size={20} className="spinner" />;
+      case 'success':
+        return <Check size={20} className="success" />;
+      default:
+        return <Download size={20} />;
     }
   };
 
@@ -510,25 +545,58 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
-  const openLyricsModal = async () => {
+  const fetchNormalLyrics = async () => {
     if (!songDetails.name) return;
     
-    setIsLyricsModalOpen(true);
-    setLoadingLyrics(true);
-    setLyrics(null);
+    setLoadingNormalLyrics(true);
+    setNormalLyrics(null);
     
     try {
       const response = await axios.get(
         `https://noox.ooguy.com:5030/letra?cancion=${encodeURIComponent(songDetails.name)}`
       );
-      setLyrics(response.data);
+      setNormalLyrics(response.data.letra); // Adjust according to your API response structure
+    } catch (error) {
+      console.error('Error fetching normal lyrics:', error);
+    } finally {
+      setLoadingNormalLyrics(false);
+    }
+  };
+  
+  const openLyricsModal = async () => {
+    if (!songDetails.name) return;
+    
+    setIsLyricsModalOpen(true);
+    setActiveTab('normal');
+    
+    // Fetch normal lyrics first
+    fetchNormalLyrics();
+  };
+  
+  const handleSyncLyrics = async () => {
+    if (!selectedLanguage) return;
+    setLoadingLyrics(true);
+  
+    try {
+      const response = await axios.post(
+        'https://noox.ooguy.com:5030/letraslrc',
+        { youtube_url: songDetails.youtubeUrl, idioma: selectedLanguage }
+      );
+      const lrc = response.data.lrc;
+      setLyrics(lrc);
+  
+      // Parseamos el LRC para combinar líneas con timestamps idénticos
+      const parsed = parseLRC(lrc);
+      setParsedLyrics(parsed);
+  
     } catch (error) {
       console.error('Error fetching lyrics:', error);
     } finally {
       setLoadingLyrics(false);
     }
   };
-
+  
+  
   const closeLyricsModal = () => {
     setIsLyricsModalOpen(false);
   };
@@ -551,7 +619,103 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
     handleNextSong();
   };
-
+  const parseLRC = (lrc: string) => {
+    // "linesByTime" usaremos un objeto para agrupar por timestamp
+    const linesByTime: Record<number, string> = {};
+  
+    // Dividimos el LRC en líneas
+    const lines = lrc.split('\n');
+  
+    for (const line of lines) {
+      // Usamos expresión regular para capturar el timestamp y el texto
+      const match = line.match(/\[(\d{2}:\d{2}(?:\.\d{2,3})?)\](.*)/);
+      if (match) {
+        const timeString = match[1];  // Ej: "00:21.03"
+        const textPart = match[2].trim(); // Ej: "♪ FALL APART"
+  
+        // Convertimos el string de tiempo a un número en segundos
+        const [minutes, seconds] = timeString.split(':');
+        const timeInSeconds = parseInt(minutes, 10) * 60 + parseFloat(seconds);
+  
+        // Si ya hay texto para ese timestamp, concatenamos
+        if (linesByTime[timeInSeconds] !== undefined) {
+          linesByTime[timeInSeconds] += ' ' + textPart;
+        } else {
+          linesByTime[timeInSeconds] = textPart;
+        }
+      }
+    }
+  
+    // Convertimos "linesByTime" en un array de objetos { time, text }
+    const parsedArray = Object.keys(linesByTime)
+      .map(key => {
+        const time = parseFloat(key);
+        const text = linesByTime[time];
+        return { time, text };
+      })
+      // Ordenamos por tiempo ascendente
+      .sort((a, b) => a.time - b.time);
+  
+    return parsedArray;
+  };
+  useEffect(() => {
+    if (!parsedLyrics.length) return;
+    let index = parsedLyrics.length - 1;
+    for (let i = 0; i < parsedLyrics.length; i++) {
+      if (currentTimeSeconds < parsedLyrics[i].time) {
+        index = i - 1;
+        break;
+      }
+    }
+    if (index < 0) index = 0;
+    setActiveLineIndex(index);
+  }, [currentTimeSeconds, parsedLyrics]);
+  
+  const handleSyncedLyricsClick = () => {
+    setActiveTab('synced');
+  
+    // Realizar el fetch cada vez que se haga clic en "Synced Lyrics"
+    if (availableLanguages.length === 0 || songDetails.youtubeUrl !== previousSongUrl) {
+      setLoadingLanguages(true);
+      axios.post(
+        'https://noox.ooguy.com:5030/letraslrcrevisr',
+        { youtube_url: songDetails.youtubeUrl }
+      )
+      .then(response => {
+        setAvailableLanguages(response.data.idiomasDisponibles);
+        setPreviousSongUrl(songDetails.youtubeUrl); // Actualizamos la URL para evitar fetch redundante
+      })
+      .catch(error => {
+        console.error('Error fetching available languages:', error);
+      })
+      .finally(() => {
+        setLoadingLanguages(false);
+      });
+    }
+  };
+  useEffect(() => {
+    // Si la canción actual ha cambiado, realizamos el fetch para actualizar las letras sincronizadas
+    if (songDetails.youtubeUrl !== previousSongUrl) {
+      setPreviousSongUrl(songDetails.youtubeUrl); // Actualizamos la URL para evitar fetch redundante
+      
+      // Realizamos el fetch solo si la URL de YouTube ha cambiado
+      setLoadingLanguages(true);
+      axios.post(
+        'https://noox.ooguy.com:5030/letraslrcrevisr',
+        { youtube_url: songDetails.youtubeUrl }
+      )
+      .then(response => {
+        setAvailableLanguages(response.data.idiomasDisponibles);
+      })
+      .catch(error => {
+        console.error('Error fetching available languages:', error);
+      })
+      .finally(() => {
+        setLoadingLanguages(false);
+      });
+    }
+  }, [songDetails.youtubeUrl]); 
+  
   return (
     <div className="player">
       <div className="track-info">
@@ -646,7 +810,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           <Plus size={20} />
         </button>
         <button onClick={handleDownload} className="control-button" title="Download">
-          <Download size={20} />
+          {renderIcon()}
         </button>
         <button onClick={handleShare} className="control-button" title="Share">
           <Share2 size={20} />
@@ -697,7 +861,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           />
         </div>
       )}
-
+       {/* addto playlist  Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onRequestClose={() => setIsAddModalOpen(false)}
@@ -772,33 +936,112 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
             <X size={20} />
           </button>
         </div>
+
+        <div className="lyrics-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'normal' ? 'active' : ''}`}
+            onClick={() => setActiveTab('normal')}
+          >
+            Standard Lyrics
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'synced' ? 'active' : ''}`}
+            onClick={handleSyncedLyricsClick}
+          >
+            Synced Lyrics
+          </button>
+        </div>
+
         <div className="lyrics-content">
-          {loadingLyrics ? (
-            <div className="lyrics-loading">
-              <div className="lyrics-spinner"></div>
-              <p>Loading lyrics...</p>
-            </div>
-          ) : lyrics ? (
-            <div className="lyrics-display">
-              <div className="lyrics-info">
-                <h4>{lyrics.cancion}</h4>
-                <p className="lyrics-artist">{lyrics.artista}</p>
-              </div>
-              <div className="lyrics-text">
-                {lyrics.letra.split('\n').map((line, index) => (
-                  <p key={index} className={line.trim() === '' ? 'lyrics-break' : ''}>
-                    {line}
-                  </p>
-                ))}
-              </div>
+          {activeTab === 'normal' ? (
+            // Normal lyrics tab content
+            <div className="normal-lyrics-container">
+              {loadingNormalLyrics ? (
+                <div className="lyrics-loading">
+                  <div className="lyrics-spinner"></div>
+                  <p>Loading lyrics...</p>
+                </div>
+              ) : normalLyrics ? (
+                <div className="lyrics-display">
+                  <div className="lyrics-text">
+                    {normalLyrics.split('\n').map((line, index) => (
+                      <p key={index}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="lyrics-not-found">
+                  <p>No lyrics found for this song.</p>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="lyrics-not-found">
-              <p>No lyrics found for this song.</p>
+            // Synchronized lyrics tab content
+            <div className="synced-lyrics-container">
+              {loadingLanguages ? (
+                <div className="lyrics-loading">
+                  <div className="lyrics-spinner"></div>
+                  <p>Loading available languages...</p>
+                </div>
+              ) : (
+                <div className="sync-lyrics-controls">
+                  {availableLanguages.length > 0 && (
+                    <div className="language-selector">
+                      <label htmlFor="language-select">Select Language:</label>
+                      <select
+                        id="language-select"
+                        value={selectedLanguage || ''}
+                        onChange={(e) => setSelectedLanguage(e.target.value)}
+                      >
+                        <option value="">--Select Language--</option>
+                        {availableLanguages.map((language, index) => (
+                          <option key={index} value={language}>
+                            {language}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <button 
+                    className="sync-button"
+                    onClick={handleSyncLyrics} 
+                    disabled={!selectedLanguage}
+                  >
+                    Sync Lyrics
+                  </button>
+                </div>
+              )}
+
+              {loadingLyrics ? (
+                <div className="lyrics-loading">
+                  <div className="lyrics-spinner"></div>
+                  <p>Loading synchronized lyrics...</p>
+                </div>
+              ) : parsedLyrics.length > 0 ? (
+                <div className="lyrics-display synced">
+                  <div className="lyrics-text">
+                    {parsedLyrics.map((line, index) => (
+                      <p key={index} className={index === activeLineIndex ? 'active' : ''}>
+                        {line.text}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : availableLanguages.length > 0 ? (
+                <div className="lyrics-instructions">
+                  <p>Please select a language and click "Sync Lyrics" to view synchronized lyrics.</p>
+                </div>
+              ) : (
+                <div className="lyrics-not-found">
+                  <p>No synchronized lyrics available for this song.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
       </Modal>
+
+
 
       <audio
         ref={audioRef}

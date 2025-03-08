@@ -13,7 +13,6 @@ dist-ssr
 *.local
 
 back/server.js
-back/serveruse.js
 src-tauri
 src-tauri/target/
 src-tauri/Cargo.lock
