@@ -412,16 +412,20 @@
 
 /* Lyrics Modal Styles */
 .lyrics-modal {
-  background-color: var(--dark-light);
-  border-radius: 8px;
-  padding: 24px;
-  width: 90%;
-  max-width: 600px;
+  width: 90%; /* Se asegura de que el modal ocupe el 90% del ancho */
+  max-width: 500px;
   max-height: 80vh;
-  position: relative;
-  z-index: 9110;
+  margin: 0 auto;
+  background-color: var(--dark-light); /* Usa tus colores definidos */
+  border-radius: 8px; /* Cambia el borde para hacerlo más suave, similar a tu estilo */
+  outline: none;
+  padding: 24px; /* Añade un padding de 24px */
+  color: var(--light); /* Usa tus colores definidos */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); /* Agrega la sombra similar al de tu amigo */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Aplica el borde como en tu amigo */
 }
 
 .lyrics-content {
@@ -476,6 +480,7 @@
   line-height: 1.6;
   color: var(--light);
   white-space: pre-wrap;
+  text-align: center;
 }
 
 .lyrics-text p {
@@ -701,5 +706,302 @@
   
   .lyrics-artist {
     font-size: 14px;
+  }
+}
+.lyrics-text p.active {
+  color: #ffffff;       /* Texto en blanco para la línea activa */
+  font-weight: bold;
+  font-size: 1.1em;     /* Aumenta un poquito el tamaño */
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+/* Lyrics Modal Styling */
+.language-selector select {
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  margin: 0 auto;
+  padding: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--light); /* Color del texto en el estado normal */
+  font-size: 0.9rem;
+  outline: none;
+  display: flex;
+}
+
+/* Cambiar el color del placeholder */
+.language-selector select::placeholder {
+  color: #fff; /* Blanco para el placeholder */
+}
+
+/* Cambiar el color de los elementos dentro del combo box */
+.language-selector select option {
+  color: #000; /* Negro para los elementos */
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.lyrics-tabs {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-button.active {
+  color: #1db954;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #1db954;
+}
+
+.tab-button:hover:not(.active) {
+  color: #ddd;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.lyrics-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  position: relative;
+}
+
+.normal-lyrics-container,
+.synced-lyrics-container {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.lyrics-display {
+  line-height: 1.6;
+}
+
+.lyrics-text p {
+  margin: 8px 0;
+  transition: all 0.3s;
+}
+
+.lyrics-text p.active {
+  color: #1db954;
+  font-size: 1.1em;
+  font-weight: 600;
+  transform: scale(1.02);
+}
+
+.sync-lyrics-controls {
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.language-selector {
+  margin-bottom: 12px;
+}
+
+.language-selector label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.language-selector select {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.sync-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #1db954;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sync-button:hover:not(:disabled) {
+  background-color: #1ed760;
+  transform: translateY(-1px);
+}
+
+.sync-button:disabled {
+  background-color: #1a5935;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+}
+
+.lyrics-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #aaa;
+}
+
+.lyrics-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #1db954;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.lyrics-not-found,
+.lyrics-instructions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #aaa;
+  text-align: center;
+}
+
+/* For scrollbar styling */
+.lyrics-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.lyrics-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lyrics-content::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.lyrics-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+
+
+.control-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Animación para el estado de carga: combina escalado y rotación */
+.spinner {
+  animation: complexLoader 1.5s infinite ease-in-out;
+}
+
+@keyframes complexLoader {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3) rotate(180deg);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+/* Animación para el estado de éxito */
+.success {
+  color: #4caf50;
+  animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
   }
 }
