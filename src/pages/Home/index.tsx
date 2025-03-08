@@ -104,7 +104,7 @@ function Home() {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://noox.ooguy.com:5030/search?url=${encodeURIComponent(url)}`
+        `http://localhost:5030/search?url=${encodeURIComponent(url)}`
       );
       const data = await response.json();
 

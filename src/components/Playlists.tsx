@@ -84,7 +84,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
       setLoading(true);
       const userData = JSON.parse(sessionCookie);
       const response = await axios.get(
-        `https://noox.ooguy.com:5030/api/playlists-by-user/${userData.usuario_id}`
+        `http://localhost:5030/api/playlists-by-user/${userData.usuario_id}`
       );
       setPlaylists(response.data);
       setError('');
@@ -105,13 +105,13 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
 
     try {
       const response = await axios.get(
-        `https://noox.ooguy.com:5030/api/songsbyplaylist/${playlist.playlist_id}`
+        `http://localhost:5030/api/songsbyplaylist/${playlist.playlist_id}`
       );
       setSongs(response.data);
 
       // Cache songs
       response.data.forEach((song: Song) => {
-        fetch(`https://noox.ooguy.com:5030/search?url=${encodeURIComponent(song.url_cancion)}`)
+        fetch(`http://localhost:5030/search?url=${encodeURIComponent(song.url_cancion)}`)
           .catch(err => console.error('Error caching song:', err));
       });
     } catch (err) {
@@ -188,7 +188,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
 
     try {
       const userData = JSON.parse(sessionCookie);
-      const response = await axios.post('https://noox.ooguy.com:5030/api/playlists', {
+      const response = await axios.post('http://localhost:5030/api/playlists', {
         nombre: newPlaylist.nombre,
         descripcion: newPlaylist.descripcion,
         usuario_id: userData.usuario_id,
@@ -235,7 +235,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`https://noox.ooguy.com:5030/api/canciones/${songId}`);
+        await axios.delete(`http://localhost:5030/api/canciones/${songId}`);
         setSongs(songs.filter(song => song.cancion_id !== songId));
         
         await Swal.fire({
@@ -276,7 +276,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`https://noox.ooguy.com:5030/api/playlists/${currentPlaylist.playlist_id}`);
+        await axios.delete(`http://localhost:5030/api/playlists/${currentPlaylist.playlist_id}`);
         setPlaylists(playlists.filter(p => p.playlist_id !== currentPlaylist.playlist_id));
         setSongsModalOpen(false);
         
@@ -314,7 +314,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
       setImportError("");
       try {
         const response = await axios.get(
-          `https://noox.ooguy.com:5030/api/youtube-playlist?url=${encodeURIComponent(inputValue)}`
+          `http://localhost:5030/api/youtube-playlist?url=${encodeURIComponent(inputValue)}`
         );
         setImportedPlaylistData(response.data);
         
@@ -356,7 +356,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
       
       // Create the playlist
       const playlistResponse = await axios.post(
-        "https://noox.ooguy.com:5030/api/playlists",
+        "http://localhost:5030/api/playlists",
         {
           nombre: importPlaylistName,
           descripcion: importPlaylistDescription,
@@ -368,7 +368,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
       
       // Add songs to the playlist
       const songRequests = importedPlaylistData.map((song) =>
-        axios.post("https://noox.ooguy.com:5030/api/canciones", {
+        axios.post("http://localhost:5030/api/canciones", {
           nombre: song.title,
           url_cancion: song.url,
           url_thumbnail: song.thumbnail,

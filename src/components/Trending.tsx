@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Play, Clock } from 'lucide-react';
 import axios from 'axios';
 import '../styles/Trending.css';
@@ -16,36 +16,40 @@ interface TrendingProps {
 
 const Trending = ({ fetchAudio }: TrendingProps) => {
   const [trendingList, setTrendingList] = useState<TrendingItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [status, setStatus] = useState<'loading' | 'error' | 'success'>(
+    'loading'
+  );
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTrending = async () => {
-      setLoading(true);
+      setStatus('loading');
       try {
-        const ipResponse = await axios.get('https://api.ipquery.io/');
-        const userIp = ipResponse.data;
-        const regionResponse = await axios.get(
+        const { data: ipData } = await axios.get('https://api.ipquery.io/');
+        const userIp = ipData?.ip || '';
+        const { data: regionData } = await axios.get(
           `https://api.ipquery.io/${userIp}`
         );
-        const region = regionResponse.data.location.country_code || 'PE';
+        const region = regionData?.location?.country_code || 'PE';
 
-        const response = await axios.get(
-          `https://noox.ooguy.com:5030/api/trending-music?region=${region}`
+        const { data } = await axios.get(
+          `http://localhost:5030/api/trending-music?region=${region}`
         );
-        setTrendingList(response.data);
+        setTrendingList(data);
+        setStatus('success');
       } catch (err) {
-        setError('Could not load trending songs. Please try again later.');
-      } finally {
-        setLoading(false);
+        setStatus('error');
       }
     };
 
     fetchTrending();
   }, []);
 
-  if (loading) {
+  const handleHover = useCallback((index: number | null) => {
+    setHoveredIndex(index);
+  }, []);
+
+  if (status === 'loading') {
     return (
       <div className="trending-container">
         <h2 className="trending-section-title">Trending on YouTube 🎵</h2>
@@ -57,16 +61,13 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
     );
   }
 
-  if (error) {
+  if (status === 'error') {
     return (
       <div className="trending-container">
         <h2 className="trending-section-title">Trending on YouTube 🎵</h2>
         <div className="trending-error">
-          <p>{error}</p>
-          <button
-            className="btn-retry"
-            onClick={() => window.location.reload()}
-          >
+          <p>Could not load trending songs. Please try again later.</p>
+          <button className="btn-retry" onClick={() => window.location.reload()}>
             Retry
           </button>
         </div>
@@ -83,8 +84,8 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
             <div
               key={item.id}
               className="trending-card"
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
+              onMouseEnter={() => handleHover(index)}
+              onMouseLeave={() => handleHover(null)}
               onClick={() => fetchAudio(item.url, item.thumbnail)}
             >
               <div className="trending-card-image">

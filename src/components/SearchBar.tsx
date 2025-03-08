@@ -51,7 +51,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ fetchAudio, youtubeAPI }) => {
   const fetchSuggestions = async (searchTerm: string) => {
     try {
       const response = await fetch(
-        `https://noox.ooguy.com:5030/api/suggestions?query=${encodeURIComponent(searchTerm)}`,
+        `http://localhost:5030/api/suggestions?query=${encodeURIComponent(searchTerm)}`,
         { headers: { "Content-Type": "application/json" } }
       );
       const data = await response.json();
@@ -85,8 +85,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ fetchAudio, youtubeAPI }) => {
       setIsLoading(true);
       setSuggestions([]);
       const apiUrl = youtubeAPI
-        ? `https://noox.ooguy.com:5030/api/yt-searchytapi?query=${encodeURIComponent(query)}`
-        : `https://noox.ooguy.com:5030/api/yt-search?query=${encodeURIComponent(query)}`;
+        ? `http://localhost:5030/api/yt-searchytapi?query=${encodeURIComponent(query)}`
+        : `http://localhost:5030/api/yt-search?query=${encodeURIComponent(query)}`;
       const response = await axios.get(apiUrl);
       setVideos(response.data);
     } catch (error) {

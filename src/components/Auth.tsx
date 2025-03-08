@@ -34,7 +34,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
     if (sessionCookie) {
       const user = JSON.parse(sessionCookie);
       axios
-        .get(`https://noox.ooguy.com:5030/api/usuarios/${user.usuario_id}`)
+        .get(`http://localhost:5030/api/usuarios/${user.usuario_id}`)
         .then((response) => {
           setUserData(response.data);
         })
@@ -75,7 +75,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
     try {
       if (isLogin) {
         const response = await axios.post(
-          'https://noox.ooguy.com:5030/api/login',
+          'http://localhost:5030/api/login',
           {
             correo: formData.correo,
             contrasena: formData.contrasena,
@@ -100,7 +100,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
         });
       } else {
         const response = await axios.post(
-          'https://noox.ooguy.com:5030/api/usuarios',
+          'http://localhost:5030/api/usuarios',
           {
             nombre: formData.nombre,
             correo: formData.correo,
@@ -144,7 +144,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
     try {
       const token = response.credential;
       const userResponse = await axios.post(
-        'https://noox.ooguy.com:5030/api/google-login',
+        'http://localhost:5030/api/google-login',
         { token }
       );
       Cookies.set('session', JSON.stringify(userResponse.data.usuario), {

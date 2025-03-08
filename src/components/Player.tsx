@@ -449,7 +449,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
       }
       const userData = JSON.parse(sessionCookie);
       const response = await axios.get(
-        `https://noox.ooguy.com:5030/api/playlists-by-user/${userData.usuario_id}`
+        `http://localhost:5030/api/playlists-by-user/${userData.usuario_id}`
       );
       setPlaylists(response.data);
     } catch (err) {
@@ -461,7 +461,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
 
   const handleAddToPlaylist = async (playlistId: number) => {
     try {
-      await axios.post('https://noox.ooguy.com:5030/api/canciones', {
+      await axios.post('http://localhost:5030/api/canciones', {
         nombre: songDetails.name,
         url_cancion: songDetails.youtubeUrl,
         url_thumbnail: songDetails.thumbnail,
@@ -519,7 +519,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     
     try {
       const response = await axios.get(
-        `https://noox.ooguy.com:5030/letra?cancion=${encodeURIComponent(songDetails.name)}`
+        `http://localhost:5030/letra?cancion=${encodeURIComponent(songDetails.name)}`
       );
       setLyrics(response.data);
     } catch (error) {
