@@ -7,16 +7,18 @@ const cors = require("cors");
 const morgan = require("morgan"); 
 const { pool, SSL_OPTIONS, CONFIG } = require("./config/db_credenciales");
 const cron = require('node-cron');
+const axios = require('axios'); // Added axios import
+const redisClient = require('./routes/redisClient'); // Added redisClient import
 
 
 // Importar rutas
 const usuarios = require("./routes/usuarios");
-const canciones = require("./routes/canciones");
 const googleAuth = require("./routes/googleAuth");
 const playlist = require("./routes/playlist");
 const proxyRoutes = require("./routes/proxyRoutes");
 const spotifyRoutes = require("./routes/spotifyRoutes");
 const youtubeRoutes = require("./routes/youtubeRoutes");
+const likes = require("./routes/likes");
 
 const app = express();
 
@@ -28,12 +30,12 @@ app.use(morgan("dev")); // Registro de peticiones en consola
 
 // Rutas con prefijo
 app.use("/", usuarios);
-app.use("/", canciones);
 app.use("/", googleAuth);
 app.use("/", playlist);
 app.use("/", proxyRoutes);
 app.use("/", spotifyRoutes);
 app.use("/", youtubeRoutes);
+app.use("/", likes);
 
 // Iniciar servidor HTTP o HTTPS según disponibilidad de certificados
 const PORT = CONFIG.PORT || 5030;
