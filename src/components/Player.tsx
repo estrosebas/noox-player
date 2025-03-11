@@ -286,7 +286,18 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   }, [volume]);
 
-  
+  // Load saved volume on component mount
+  useEffect(() => {
+    const savedVolume = localStorage.getItem('noox-player-volume');
+    if (savedVolume !== null) {
+      const parsedVolume = parseFloat(savedVolume);
+      setVolume(parsedVolume);
+      if (audioRef.current) {
+        audioRef.current.volume = parsedVolume;
+      }
+    }
+  }, []);
+
   // Helper function to add song to history
   const addSongToHistory = (name: string, url: string, thumbnail: string, author?: string) => {
     // Guardar en historial
@@ -386,11 +397,13 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   // Handle volume change
   // Manejar cambio de volumen
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value) / 100;
+    setVolume(newVolume);
     if (audioRef.current) {
-      const newVolume = parseFloat(e.target.value) / 100;
       audioRef.current.volume = newVolume;
-      setVolume(newVolume);
     }
+    // Save volume to localStorage
+    localStorage.setItem('noox-player-volume', newVolume.toString());
   };
 
   // Toggle volume control
