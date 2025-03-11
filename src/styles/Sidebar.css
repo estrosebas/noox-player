@@ -188,6 +188,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   margin-top: 16px;
   transition: opacity 0.3s ease, transform 0.3s ease;
+  padding-bottom: 200px;
 }
 
 .sidebar.collapsed .sidebar-settings {
@@ -397,5 +398,13 @@ input:checked + .slider:before {
 .custom-swal-popup {
   border-radius: 12px !important;
   color: #fff; /* Asegura que el texto se vea en el fondo oscuro */
-  z-index: 9500 !important;
+  z-index: 2147483647 !important; /* Maximum possible z-index value */
+}
+
+.swal2-popup {
+  z-index: 2147483647 !important; /* Maximum possible z-index value */
+}
+
+.swal2-container {
+  z-index: 2147483647 !important; /* Maximum possible z-index value */
 }

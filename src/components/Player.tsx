@@ -1,3 +1,6 @@
+// Player Component - Main music player with controls and playlist management
+// Componente Player - Reproductor de música principal con controles y gestión de listas de reproducción
+
 import React, { useState, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Download, Share2, Plus, Volume2, VolumeX, X, Repeat, Youtube, Mic,  Loader2, Check  } from 'lucide-react';
 import Modal from 'react-modal';
@@ -6,8 +9,8 @@ import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import '../styles/Player.css';
 
-// Import the CapacitorMusicControls plugin
-// We need to use dynamic import to avoid issues with web platform
+// Import the CapacitorMusicControls plugin for mobile platforms
+// Importar el plugin CapacitorMusicControls para plataformas móviles
 let CapacitorMusicControls: any = null;
 if (Capacitor.getPlatform() !== 'web') {
   import('capacitor-music-controls-plugin').then(module => {
@@ -17,18 +20,24 @@ if (Capacitor.getPlatform() !== 'web') {
   });
 }
 
+// Interface definitions for playlists and player functionality
+// Definiciones de interfaces para listas de reproducción y funcionalidad del reproductor
 interface PlaylistItem {
-  playlist_id: number;
-  nombre: string;
-  descripcion: string;
-  usuario_id: number;
-  fecha_creacion: string;
+  playlist_id: number;      // Playlist identifier / Identificador de la lista
+  nombre: string;          // Playlist name / Nombre de la lista
+  descripcion: string;     // Playlist description / Descripción de la lista
+  usuario_id: number;      // User identifier / Identificador del usuario
+  fecha_creacion: string;  // Creation date / Fecha de creación
 }
 
+// Interface for exposing player methods to parent components
+// Interfaz para exponer métodos del reproductor a componentes padres
 export interface MusicPlayerRef {
   playSong: (name: string, url: string, thumbnail: string, youtubeUrl: string, author?: string, newPlaylist?: any[]) => void;
 }
 
+// Props interface for the Player component
+// Interfaz de props para el componente Player
 interface PlayerProps {
   fetchAudio: (url: string, thumbnail: string) => void;
 }
@@ -49,18 +58,22 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   const [isLyricsModalOpen, setIsLyricsModalOpen] = useState(false);
   const [, setLyrics] = useState<{artista: string, cancion: string, letra: string} | null>(null);
   const [loadingLyrics, setLoadingLyrics] = useState(false);
+  const [showSyncControls, setShowSyncControls] = useState(true);
+  const [syncedSongId, setSyncedSongId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressBarRef = useRef<HTMLInputElement | null>(null);
   const volumeSliderRef = useRef<HTMLInputElement | null>(null);
+  const lyricsContainerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   //si es necesario definiser lyrics
 
   // Estados para la canción actual y playlist
   const [songDetails, setSongDetails] = useState({
-    name: 'No track playing',
-    url: '',
-    thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80',
-    youtubeUrl: '',
-    author: 'Unknown Artist'
+    name: 'No track playing',                // Song name / Nombre de la canción
+    url: '',                                 // Audio URL / URL del audio
+    thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80',  // Default thumbnail / Miniatura por defecto
+    youtubeUrl: '',                          // YouTube URL / URL de YouTube
+    author: 'Unknown Artist'                 // Artist name / Nombre del artista
   });
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [currentSongIndex, setCurrentSongIndex] = useState(-1);
@@ -71,9 +84,6 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   const [playlists, setPlaylists] = useState<PlaylistItem[]>([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [playlistError, setPlaylistError] = useState('');
-
-  // Ref para el título y verificar desbordamiento
-  const titleRef = useRef<HTMLHeadingElement>(null);
 
   ///estados para el lrc
   const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
@@ -129,7 +139,9 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
         });
     }
   };
-  
+
+  // Handle controls event from CapacitorMusicControls
+  // Manejar evento de controles de CapacitorMusicControls
   useEffect(() => {
     const handleControlsEvent = (action: any) => {
       console.log("controlsNotification event:", action);
@@ -172,16 +184,22 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     };
   }, [isPlaying]);
 
+  // Update music notification when song details change
+  // Actualizar notificación cuando cambian los detalles de la canción
   useEffect(() => {
     updateMusicNotification();
   }, [songDetails]);
 
+  // Update isPlaying state in CapacitorMusicControls
+  // Actualizar estado de reproducción en CapacitorMusicControls
   useEffect(() => {
     if (Capacitor.getPlatform() !== "web" && CapacitorMusicControls) {
       CapacitorMusicControls.updateIsPlaying({ isPlaying });
     }
   }, [isPlaying]);
 
+  // Destroy music notification when component unmounts
+  // Destruir notificación cuando el componente se desmonta
   useEffect(() => {
     return () => {
       if (Capacitor.getPlatform() !== "web" && CapacitorMusicControls) {
@@ -192,6 +210,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   }, []);
 
   // Browser Media Session API
+  // API de sesión de medios del navegador
   useEffect(() => {
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -226,6 +245,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   }, [songDetails, isPlaying]);
 
+  // Fetch audio when current song index changes
+  // Obtener audio cuando cambia el índice de la canción actual
   useEffect(() => {
     if (currentSongIndex !== -1 && playlist.length > 0) {
       const song = playlist[currentSongIndex];
@@ -339,8 +360,9 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     setCurrentTimeSeconds(currentTime);
     setDurationTime(formatTime(duration || 0));
   };
-  
 
+  // Toggle play/pause
+  // Alternar reproducción/pausa
   const togglePlayPause = () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -352,6 +374,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Handle seek
+  // Manejar búsqueda
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (audioRef.current) {
       const newTime = (parseFloat(e.target.value) / 100) * audioRef.current.duration;
@@ -359,6 +383,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Handle volume change
+  // Manejar cambio de volumen
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (audioRef.current) {
       const newVolume = parseFloat(e.target.value) / 100;
@@ -367,6 +393,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Toggle volume control
+  // Alternar control de volumen
   const toggleVolumeControl = () => {
     // En móvil, mostrar el control de volumen móvil
     if (window.innerWidth <= 768) {
@@ -390,14 +418,14 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     if (storedPlaylistData) {
       const parsedData = JSON.parse(storedPlaylistData);
       const updatedPlaylist = parsedData.playlist;
-      const latestIndex = parsedData.currentIndex;  // 🛑 Cargar el índice más reciente
+      const latestIndex = parsedData.currentIndex;  // Cargar el índice más reciente
   
       if (updatedPlaylist.length === 0) {
         console.log("No hay canciones en la playlist");
         return;
       }
   
-      let nextIndex = latestIndex + 1;  // 🛑 Usar el índice más reciente en vez de `currentSongIndex`
+      let nextIndex = latestIndex + 1;  // Usar el índice más reciente en vez de `currentSongIndex`
       if (nextIndex >= updatedPlaylist.length) nextIndex = 0;
   
       console.log("Next song index:", nextIndex, "Song:", updatedPlaylist[nextIndex]);
@@ -406,19 +434,22 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
       updateCurrentIndexInStorage(nextIndex);
     }
   };
+
+  // Handle previous song
+  // Manejar canción anterior
   const handlePrevSong = () => {
     const storedPlaylistData = localStorage.getItem('currentPlaylistData');
     if (storedPlaylistData) {
       const parsedData = JSON.parse(storedPlaylistData);
       const updatedPlaylist = parsedData.playlist;
-      const latestIndex = parsedData.currentIndex;  // 🛑 Cargar el índice más reciente
+      const latestIndex = parsedData.currentIndex;  // Cargar el índice más reciente
   
       if (updatedPlaylist.length === 0) {
         console.log("No hay canciones en la playlist");
         return;
       }
   
-      let prevIndex = latestIndex - 1;  // 🛑 Usar el índice más reciente en vez de `currentSongIndex`
+      let prevIndex = latestIndex - 1;  // Usar el índice más reciente en vez de `currentSongIndex`
       if (prevIndex < 0) prevIndex = updatedPlaylist.length - 1;
   
       console.log("Previous song index:", prevIndex, "Song:", updatedPlaylist[prevIndex]);
@@ -450,6 +481,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }, 2000);
   };
 
+  // Render icon
+  // Renderizar icono
   const renderIcon = () => {
     switch(status) {
       case 'loading':
@@ -461,6 +494,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Handle share
+  // Manejar compartir
   const handleShare = () => {
     if (songDetails.youtubeUrl) {
       navigator.clipboard.writeText(songDetails.youtubeUrl)
@@ -472,6 +507,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Handle open add modal
+  // Manejar abrir modal de agregar
   const handleOpenAddModal = async () => {
     setPlaylistError('');
     setLoadingPlaylists(true);
@@ -494,6 +531,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Handle add to playlist
+  // Manejar agregar a lista
   const handleAddToPlaylist = async (playlistId: number) => {
     try {
       await axios.post('https://noox.ooguy.com:5030/api/canciones', {
@@ -508,6 +547,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Toggle repeat
+  // Alternar repetición
   const toggleRepeat = () => {
     setIsRepeatEnabled(!isRepeatEnabled);
     if (audioRef.current) {
@@ -520,6 +561,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Open YouTube modal
+  // Abrir modal de YouTube
   const openYoutubeModal = () => {
     // Save current playing state
     setWasPlayingBeforeModal(isPlaying);
@@ -533,6 +576,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     setIsYoutubeModalOpen(true);
   };
 
+  // Close YouTube modal
+  // Cerrar modal de YouTube
   const closeYoutubeModal = () => {
     setIsYoutubeModalOpen(false);
     
@@ -545,6 +590,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
 
+  // Fetch normal lyrics
+  // Obtener letras normales
   const fetchNormalLyrics = async () => {
     if (!songDetails.name) return;
     
@@ -563,20 +610,74 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
   
+  // Fetch languages for lyrics synchronization
+  // Obtener idiomas para sincronización de letras
+  const fetchLanguages = async () => {
+    if (!songDetails.youtubeUrl) return;
+    
+    setLoadingLanguages(true);
+    try {
+      const response = await axios.get(`https://noox.ooguy.com:5030/languages/${songDetails.youtubeUrl}`);
+      setAvailableLanguages(response.data.languages);
+      
+      // If this song was previously synced, try to fetch the lyrics again
+      if (syncedSongId === songDetails.youtubeUrl) {
+        setLoadingLyrics(true);
+        try {
+          const lyricsResponse = await axios.post(
+            'https://noox.ooguy.com:5030/letraslrc',
+            { youtube_url: songDetails.youtubeUrl, idioma: selectedLanguage }
+          );
+          const lrc = lyricsResponse.data.lrc;
+          setLyrics(lrc);
+          const parsed = parseLRC(lrc);
+          setParsedLyrics(parsed);
+        } catch (error) {
+          console.error('Error re-fetching synced lyrics:', error);
+          setParsedLyrics([]);
+          setSyncedSongId(null);
+          setShowSyncControls(true);
+        } finally {
+          setLoadingLyrics(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching languages:', error);
+      setAvailableLanguages([]);
+    } finally {
+      setLoadingLanguages(false);
+    }
+  };
+
+  // Open lyrics modal
+  // Abrir modal de letras
   const openLyricsModal = async () => {
     if (!songDetails.name) return;
     
     setIsLyricsModalOpen(true);
     setActiveTab('normal');
     
+    // Only show sync controls if this song hasn't been synced yet
+    setShowSyncControls(syncedSongId !== songDetails.youtubeUrl);
+    
     // Fetch normal lyrics first
     fetchNormalLyrics();
+    
+    // Fetch available languages and try to restore synced lyrics if available
+    fetchLanguages();
   };
-  
+
+  // Close lyrics modal
+  // Cerrar modal de letras
+  const closeLyricsModal = () => {
+    setIsLyricsModalOpen(false);
+    // Don't reset showSyncControls here anymore, as we want to maintain the synced state
+  };
+
+  // Handle sync lyrics
+  // Manejar sincronización de letras
   const handleSyncLyrics = async () => {
-    if (!selectedLanguage) return;
     setLoadingLyrics(true);
-  
     try {
       const response = await axios.post(
         'https://noox.ooguy.com:5030/letraslrc',
@@ -588,6 +689,8 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
       // Parseamos el LRC para combinar líneas con timestamps idénticos
       const parsed = parseLRC(lrc);
       setParsedLyrics(parsed);
+      setShowSyncControls(false);
+      setSyncedSongId(songDetails.youtubeUrl); // Save the synced song ID
   
     } catch (error) {
       console.error('Error fetching lyrics:', error);
@@ -597,14 +700,12 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   };
   
   
-  const closeLyricsModal = () => {
-    setIsLyricsModalOpen(false);
-  };
-
+  // Get YouTube embed URL - Extracts video ID and returns embed URL
+  // Obtener URL de incrustación de YouTube - Extrae ID del video y retorna URL de incrustación
   const getYoutubeEmbedUrl = () => {
     if (!songDetails.youtubeUrl) return '';
     
-    // Extract video ID from YouTube URL
+    // Extract video ID from YouTube URL / Extraer ID del video de la URL de YouTube
     const videoIdMatch = songDetails.youtubeUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
     if (!videoIdMatch) return '';
     
@@ -612,9 +713,12 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     return `https://www.youtube.com/embed/${videoId}?autoplay=0&origin=${window.location.origin}`;
   };
 
+  // Handle song end - Manages automatic playback and repeat functionality
+  // Manejar fin de canción - Gestiona la reproducción automática y la funcionalidad de repetición
   const handleSongEnd = () => {
     if (isRepeatEnabled) {
       // If repeat is enabled, the audio element's loop property will handle it
+      // Si la repetición está habilitada, la propiedad loop del elemento audio lo manejará
       return;
     }
     handleNextSong();
@@ -623,21 +727,22 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     // "linesByTime" usaremos un objeto para agrupar por timestamp
     const linesByTime: Record<number, string> = {};
   
-    // Dividimos el LRC en líneas
+    // Split LRC into lines / Dividir LRC en líneas
     const lines = lrc.split('\n');
   
     for (const line of lines) {
-      // Usamos expresión regular para capturar el timestamp y el texto
+      // Use regex to capture timestamp and text
+      // Usar expresión regular para capturar marca de tiempo y texto
       const match = line.match(/\[(\d{2}:\d{2}(?:\.\d{2,3})?)\](.*)/);
       if (match) {
-        const timeString = match[1];  // Ej: "00:21.03"
-        const textPart = match[2].trim(); // Ej: "♪ FALL APART"
+        const timeString = match[1];  // Example/Ejemplo: "00:21.03"
+        const textPart = match[2].trim(); // Example/Ejemplo: "♪ FALL APART"
   
-        // Convertimos el string de tiempo a un número en segundos
+        // Convert time string to seconds / Convertir string de tiempo a segundos
         const [minutes, seconds] = timeString.split(':');
         const timeInSeconds = parseInt(minutes, 10) * 60 + parseFloat(seconds);
   
-        // Si ya hay texto para ese timestamp, concatenamos
+        // Concatenate text if timestamp exists / Concatenar texto si la marca de tiempo existe
         if (linesByTime[timeInSeconds] !== undefined) {
           linesByTime[timeInSeconds] += ' ' + textPart;
         } else {
@@ -658,6 +763,9 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   
     return parsedArray;
   };
+
+  // Update active line index and auto-scroll
+  // Actualizar índice de línea activa y auto-scroll
   useEffect(() => {
     if (!parsedLyrics.length) return;
     let index = parsedLyrics.length - 1;
@@ -669,30 +777,27 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
     if (index < 0) index = 0;
     setActiveLineIndex(index);
-  }, [currentTimeSeconds, parsedLyrics]);
-  
-  const handleSyncedLyricsClick = () => {
-    setActiveTab('synced');
-  
-    // Realizar el fetch cada vez que se haga clic en "Synced Lyrics"
-    if (availableLanguages.length === 0 || songDetails.youtubeUrl !== previousSongUrl) {
-      setLoadingLanguages(true);
-      axios.post(
-        'https://noox.ooguy.com:5030/letraslrcrevisr',
-        { youtube_url: songDetails.youtubeUrl }
-      )
-      .then(response => {
-        setAvailableLanguages(response.data.idiomasDisponibles);
-        setPreviousSongUrl(songDetails.youtubeUrl); // Actualizamos la URL para evitar fetch redundante
-      })
-      .catch(error => {
-        console.error('Error fetching available languages:', error);
-      })
-      .finally(() => {
-        setLoadingLanguages(false);
+
+    // Auto-scroll to keep active line centered
+    const container = lyricsContainerRef.current;
+    const activeLine = container?.querySelector(`[data-line-index="${index}"]`) as HTMLElement | null;
+
+    if (container && activeLine) {
+      // Calculate the scroll position to center the line
+      const scrollPosition = 
+        activeLine.offsetTop - 
+        (container.clientHeight / 2) + 
+        (activeLine.clientHeight / 2);
+
+      container.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
       });
     }
-  };
+  }, [currentTimeSeconds, parsedLyrics]);
+
+  // Fetch available languages when song changes
+  // Obtener idiomas disponibles cuando cambia la canción
   useEffect(() => {
     // Si la canción actual ha cambiado, realizamos el fetch para actualizar las letras sincronizadas
     if (songDetails.youtubeUrl !== previousSongUrl) {
@@ -715,7 +820,17 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
       });
     }
   }, [songDetails.youtubeUrl]); 
-  
+
+  // Reset synced state when song changes
+  // Restablecer estado de sincronización cuando cambia la canción
+  useEffect(() => {
+    if (songDetails.youtubeUrl && syncedSongId !== songDetails.youtubeUrl) {
+      setParsedLyrics([]);
+      setSyncedSongId(null);
+      setShowSyncControls(true);
+    }
+  }, [songDetails.youtubeUrl]);
+
   return (
     <div className="player">
       <div className="track-info">
@@ -946,7 +1061,7 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
           </button>
           <button 
             className={`tab-button ${activeTab === 'synced' ? 'active' : ''}`}
-            onClick={handleSyncedLyricsClick}
+            onClick={() => setActiveTab('synced')}
           >
             Synced Lyrics
           </button>
@@ -983,34 +1098,38 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
                   <div className="lyrics-spinner"></div>
                   <p>Loading available languages...</p>
                 </div>
-              ) : (
-                <div className="sync-lyrics-controls">
-                  {availableLanguages.length > 0 && (
-                    <div className="language-selector">
-                      <label htmlFor="language-select">Select Language:</label>
-                      <select
-                        id="language-select"
-                        value={selectedLanguage || ''}
-                        onChange={(e) => setSelectedLanguage(e.target.value)}
-                      >
-                        <option value="">--Select Language--</option>
-                        {availableLanguages.map((language, index) => (
-                          <option key={index} value={language}>
-                            {language}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <button 
-                    className="sync-button"
-                    onClick={handleSyncLyrics} 
-                    disabled={!selectedLanguage}
-                  >
-                    Sync Lyrics
-                  </button>
+              ) : availableLanguages.length > 0 ? (
+                <div className={`sync-lyrics-controls ${!showSyncControls ? 'hidden' : ''}`}>
+                  <div className="language-selector">
+                    <select
+                      value={selectedLanguage || ''}
+                      onChange={(e) => setSelectedLanguage(e.target.value)}
+                      className="language-select"
+                    >
+                      <option value="">Select Language</option>
+                      {availableLanguages.map((language, index) => (
+                        <option key={index} value={language}>
+                          {language}
+                        </option>
+                      ))}
+                    </select>
+                    <button 
+                      className="sync-button"
+                      onClick={handleSyncLyrics} 
+                      disabled={!selectedLanguage || loadingLyrics}
+                    >
+                      {loadingLyrics ? (
+                        <>
+                          <Loader2 className="spin" size={16} />
+                          Syncing...
+                        </>
+                      ) : (
+                        'Sync Lyrics'
+                      )}
+                    </button>
+                  </div>
                 </div>
-              )}
+              ) : null}
 
               {loadingLyrics ? (
                 <div className="lyrics-loading">
@@ -1018,18 +1137,18 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
                   <p>Loading synchronized lyrics...</p>
                 </div>
               ) : parsedLyrics.length > 0 ? (
-                <div className="lyrics-display synced">
+                <div className="lyrics-display synced" ref={lyricsContainerRef}>
                   <div className="lyrics-text">
                     {parsedLyrics.map((line, index) => (
-                      <p key={index} className={index === activeLineIndex ? 'active' : ''}>
+                      <p
+                        key={index}
+                        data-line-index={index}
+                        className={index === activeLineIndex ? 'active' : ''}
+                      >
                         {line.text}
                       </p>
                     ))}
                   </div>
-                </div>
-              ) : availableLanguages.length > 0 ? (
-                <div className="lyrics-instructions">
-                  <p>Please select a language and click "Sync Lyrics" to view synchronized lyrics.</p>
                 </div>
               ) : (
                 <div className="lyrics-not-found">

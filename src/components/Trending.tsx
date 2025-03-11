@@ -1,29 +1,37 @@
+// Trending Component - Displays trending music from YouTube based on user's region
+// Componente Trending - Muestra música en tendencia de YouTube según la región del usuario
+
 import { useState, useEffect } from 'react';
 import { Play, Clock } from 'lucide-react';
 import axios from 'axios';
 import '../styles/Trending.css';
 
+// Interfaces / Interfaces
 interface TrendingItem {
-  title: string;
-  id: string;
-  url: string;
-  thumbnail: string;
+  title: string;      // Song title / Título de la canción
+  id: string;        // Unique identifier / Identificador único
+  url: string;       // YouTube URL / URL de YouTube
+  thumbnail: string; // Thumbnail image URL / URL de la imagen miniatura
 }
 
 interface TrendingProps {
-  fetchAudio: (url: string, thumbnail: string) => void;
+  fetchAudio: (url: string, thumbnail: string) => void;  // Function to fetch and play audio / Función para obtener y reproducir audio
 }
 
 const Trending = ({ fetchAudio }: TrendingProps) => {
-  const [trendingList, setTrendingList] = useState<TrendingItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  // State Management / Gestión de estados
+  const [trendingList, setTrendingList] = useState<TrendingItem[]>([]);     // List of trending songs / Lista de canciones en tendencia
+  const [loading, setLoading] = useState(true);                             // Loading state / Estado de carga
+  const [error, setError] = useState('');                                   // Error message / Mensaje de error
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);    // Index of hovered card / Índice de la tarjeta sobre la que está el cursor
 
+  // Effects / Efectos
   useEffect(() => {
+    // Fetch trending songs based on user's region / Obtener canciones en tendencia según la región del usuario
     const fetchTrending = async () => {
       setLoading(true);
       try {
+        // Get user's IP and region / Obtener IP y región del usuario
         const ipResponse = await axios.get('https://api.ipquery.io/');
         const userIp = ipResponse.data;
         const regionResponse = await axios.get(
@@ -31,6 +39,7 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
         );
         const region = regionResponse.data.location.country_code || 'PE';
 
+        // Fetch trending songs for the region / Obtener canciones en tendencia para la región
         const response = await axios.get(
           `https://noox.ooguy.com:5030/api/trending-music?region=${region}`
         );
@@ -45,6 +54,7 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
     fetchTrending();
   }, []);
 
+  // Loading State UI / Interfaz de estado de carga
   if (loading) {
     return (
       <div className="trending-container">
@@ -57,6 +67,7 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
     );
   }
 
+  // Error State UI / Interfaz de estado de error
   if (error) {
     return (
       <div className="trending-container">
@@ -74,6 +85,7 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
     );
   }
 
+  // Main UI - Grid of trending songs / Interfaz principal - Cuadrícula de canciones en tendencia
   return (
     <div className="trending-container">
       <h2 className="trending-section-title">Trending on YouTube 🎵</h2>
@@ -87,6 +99,7 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
               onMouseLeave={() => setHoveredIndex(null)}
               onClick={() => fetchAudio(item.url, item.thumbnail)}
             >
+              {/* Song Thumbnail with Play Overlay / Miniatura de la canción con superposición de reproducción */}
               <div className="trending-card-image">
                 <img src={item.thumbnail} alt={item.title} loading="lazy" />
                 {hoveredIndex === index && (
@@ -97,6 +110,7 @@ const Trending = ({ fetchAudio }: TrendingProps) => {
                   </div>
                 )}
               </div>
+              {/* Song Information / Información de la canción */}
               <div className="trending-card-content">
                 <h3 className="trending-card-title">{item.title}</h3>
                 <div className="trending-card-meta">
