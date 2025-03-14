@@ -8,7 +8,7 @@ const redisClient = createClient(); // Usa opciones si es necesario (host, puert
 const DB_CONFIG = {
   host: "localhost",
   user: "root",
-  password: "jmtm",
+  password: "",
   database: "noox-music",
   waitForConnections: true,
   connectionLimit: 500,

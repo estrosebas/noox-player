@@ -8,10 +8,23 @@ const axios = require("axios");
 const qs = require("qs");
 const cheerio = require("cheerio");
 const { ytDlpSearch } = require("../services/youtubeService");
+const glob = require("glob");
+const fs = require("fs");
 
+///ytmusicapi version no oficial jiji
 
-const SPOTIFY_CLIENT_ID = "tus credenciales";
-const SPOTIFY_CLIENT_SECRET = "tus credenciales";
+const YoutubeMusicApi = require('youtube-music-api');
+// Inicializar YoutubeMusicApi
+const api = new YoutubeMusicApi();
+
+api.initalize().then(() => {
+  console.log('YT Music API initialized!');
+}).catch((err) => {
+  console.error('Error initializing YT Music API:', err);
+});
+///////////
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const AUTH_URL = 'https://accounts.spotify.com/api/token';
 
 const router = express.Router();
@@ -86,7 +99,7 @@ router.get("/search", async (req, res) => {
         duration: output.duration,
         autor: output.channel,
         // Ajusta la URL según tu dominio o IP
-        audioUrl: `https://lcoalhost:5030/proxy?url=${encodeURIComponent(output.url)}`,
+        audioUrl: `https://noox.ooguy.com:5030/proxy?url=${encodeURIComponent(output.url)}`,
       };
 
       // 3. Guardar la respuesta en Redis (10 min = 600s)
@@ -156,6 +169,8 @@ function generarUrlLetras(artista, cancion) {
   cancion = cancion.toLowerCase().replace(/\s+/g, "-");
   return `https://www.letras.com/${artista}/${cancion}/`;
 }
+
+/*
 router.get("/api/yt-searchytapi", async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: "Falta el parámetro 'query'" });
@@ -183,7 +198,7 @@ router.get("/api/yt-searchytapi", async (req, res) => {
     console.error(`Error en la búsqueda de YouTube API: ${error}`);
     res.status(500).json({ error: "Error al buscar videos en YouTube API" });
   }
-});
+});*/
 
 router.get("/api/suggestions", async (req, res) => {
   const { query } = req.query;
@@ -374,5 +389,42 @@ async function obtenerToken() {
     return null;
   }
   }
+function searchSong(query) {
+  return api.search(query, 'song').then(result => {
+    return result.content.slice(0, 10); // Limitar a los primeros 10 resultados
+  }).catch((err) => {
+    console.error('Error searching song:', err);
+    return [];
+    });
+}
+// Ruta para buscar canciones y obtener letras
+router.get('/api/yt-searchytapi', async (req, res) => {
+  const query = req.query.query;
 
+  if (!query) {
+  return res.status(400).send('Por favor ingrese el nombre de la canción');
+  }
+
+  try {
+  const songs = await searchSong(query);
+
+  if (songs.length === 0) {
+    return res.status(404).send('No se encontraron resultados.');
+  }
+
+  // Formatear la respuesta con la estructura solicitada
+  const response = songs.map(song => ({
+    title: song.name,
+    id: song.videoId,
+    thumbnail: song.thumbnails ? song.thumbnails[0].url : null,
+    url: `https://www.youtube.com/watch?v=${song.videoId}`
+  }));
+
+  res.json(response);
+
+} catch (error) {
+  console.error('Error handling search request:', error);
+  res.status(500).send('Hubo un error al procesar la búsqueda.');
+}
+});
 module.exports = router;

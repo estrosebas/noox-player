@@ -59,22 +59,22 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   useEffect(() => {
     if (isOpen) {
       fetchPlaylists();
+      
+      // Set up interval to check for session changes
+      const intervalId = setInterval(() => {
+        const sessionCookie = Cookies.get('session');
+        if (!sessionCookie && playlists.length > 0) {
+          // User logged out, clear playlists
+          setPlaylists([]);
+          setError('Please log in to view your playlists');
+        } else if (sessionCookie && playlists.length === 0) {
+          // User logged in, fetch playlists
+          fetchPlaylists();
+        }
+      }, 1000);
+  
+      return () => clearInterval(intervalId);
     }
-
-    // Set up interval to check for session changes
-    const intervalId = setInterval(() => {
-      const sessionCookie = Cookies.get('session');
-      if (!sessionCookie && playlists.length > 0) {
-        // User logged out, clear playlists
-        setPlaylists([]);
-        setError('Please log in to view your playlists');
-      } else if (sessionCookie && playlists.length === 0) {
-        // User logged in, fetch playlists
-        fetchPlaylists();
-      }
-    }, 1000);
-
-    return () => clearInterval(intervalId);
   }, [isOpen]);
 
   // API Functions / Funciones de API

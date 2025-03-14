@@ -623,69 +623,55 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   };
   
-  // Fetch languages for lyrics synchronization
-  // Obtener idiomas para sincronización de letras
-  const fetchLanguages = async () => {
-    if (!songDetails.youtubeUrl) return;
-    
-    setLoadingLanguages(true);
-    try {
-      const response = await axios.get(`https://noox.ooguy.com:5030/languages/${songDetails.youtubeUrl}`);
-      setAvailableLanguages(response.data.languages);
+  // Fetch available languages when song changes
+  // Obtener idiomas disponibles cuando cambia la canción
+  useEffect(() => {
+    // Si la canción actual ha cambiado, realizamos el fetch para actualizar las letras sincronizadas
+    if (songDetails.youtubeUrl !== previousSongUrl) {
+      setPreviousSongUrl(songDetails.youtubeUrl); // Actualizamos la URL para evitar fetch redundante
       
-      // If this song was previously synced, try to fetch the lyrics again
-      if (syncedSongId === songDetails.youtubeUrl) {
-        setLoadingLyrics(true);
-        try {
-          const lyricsResponse = await axios.post(
+      // Realizamos el fetch solo si la URL de YouTube ha cambiado
+      setLoadingLanguages(true);
+      axios.post(
+        'https://noox.ooguy.com:5030/letraslrcrevisr',
+        { youtube_url: songDetails.youtubeUrl }
+      )
+      .then(response => {
+        setAvailableLanguages(response.data.idiomasDisponibles);
+        
+        // If this song was previously synced, try to fetch the lyrics again
+        if (syncedSongId === songDetails.youtubeUrl) {
+          setLoadingLyrics(true);
+          axios.post(
             'https://noox.ooguy.com:5030/letraslrc',
             { youtube_url: songDetails.youtubeUrl, idioma: selectedLanguage }
-          );
-          const lrc = lyricsResponse.data.lrc;
-          setLyrics(lrc);
-          const parsed = parseLRC(lrc);
-          setParsedLyrics(parsed);
-        } catch (error) {
-          console.error('Error re-fetching synced lyrics:', error);
-          setParsedLyrics([]);
-          setSyncedSongId(null);
-          setShowSyncControls(true);
-        } finally {
-          setLoadingLyrics(false);
+          )
+          .then(lyricsResponse => {
+            const lrc = lyricsResponse.data.lrc;
+            setLyrics(lrc);
+            const parsed = parseLRC(lrc);
+            setParsedLyrics(parsed);
+          })
+          .catch(error => {
+            console.error('Error re-fetching synced lyrics:', error);
+            setParsedLyrics([]);
+            setSyncedSongId(null);
+            setShowSyncControls(true);
+          })
+          .finally(() => {
+            setLoadingLyrics(false);
+          });
         }
-      }
-    } catch (error) {
-      console.error('Error fetching languages:', error);
-      setAvailableLanguages([]);
-    } finally {
-      setLoadingLanguages(false);
+      })
+      .catch(error => {
+        console.error('Error fetching available languages:', error);
+        setAvailableLanguages([]);
+      })
+      .finally(() => {
+        setLoadingLanguages(false);
+      });
     }
-  };
-
-  // Open lyrics modal
-  // Abrir modal de letras
-  const openLyricsModal = async () => {
-    if (!songDetails.name) return;
-    
-    setIsLyricsModalOpen(true);
-    setActiveTab('normal');
-    
-    // Only show sync controls if this song hasn't been synced yet
-    setShowSyncControls(syncedSongId !== songDetails.youtubeUrl);
-    
-    // Fetch normal lyrics first
-    fetchNormalLyrics();
-    
-    // Fetch available languages and try to restore synced lyrics if available
-    fetchLanguages();
-  };
-
-  // Close lyrics modal
-  // Cerrar modal de letras
-  const closeLyricsModal = () => {
-    setIsLyricsModalOpen(false);
-    // Don't reset showSyncControls here anymore, as we want to maintain the synced state
-  };
+  }, [songDetails.youtubeUrl, syncedSongId, selectedLanguage]);
 
   // Handle sync lyrics
   // Manejar sincronización de letras
@@ -809,31 +795,6 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     }
   }, [currentTimeSeconds, parsedLyrics]);
 
-  // Fetch available languages when song changes
-  // Obtener idiomas disponibles cuando cambia la canción
-  useEffect(() => {
-    // Si la canción actual ha cambiado, realizamos el fetch para actualizar las letras sincronizadas
-    if (songDetails.youtubeUrl !== previousSongUrl) {
-      setPreviousSongUrl(songDetails.youtubeUrl); // Actualizamos la URL para evitar fetch redundante
-      
-      // Realizamos el fetch solo si la URL de YouTube ha cambiado
-      setLoadingLanguages(true);
-      axios.post(
-        'https://noox.ooguy.com:5030/letraslrcrevisr',
-        { youtube_url: songDetails.youtubeUrl }
-      )
-      .then(response => {
-        setAvailableLanguages(response.data.idiomasDisponibles);
-      })
-      .catch(error => {
-        console.error('Error fetching available languages:', error);
-      })
-      .finally(() => {
-        setLoadingLanguages(false);
-      });
-    }
-  }, [songDetails.youtubeUrl]); 
-
   // Reset synced state when song changes
   // Restablecer estado de sincronización cuando cambia la canción
   useEffect(() => {
@@ -843,6 +804,28 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
       setShowSyncControls(true);
     }
   }, [songDetails.youtubeUrl]);
+
+  // Open lyrics modal
+  // Abrir modal de letras
+  const openLyricsModal = async () => {
+    if (!songDetails.name) return;
+    
+    setIsLyricsModalOpen(true);
+    setActiveTab('normal');
+    
+    // Only show sync controls if this song hasn't been synced yet
+    setShowSyncControls(syncedSongId !== songDetails.youtubeUrl);
+    
+    // Fetch normal lyrics first
+    fetchNormalLyrics();
+  };
+
+  // Close lyrics modal
+  // Cerrar modal de letras
+  const closeLyricsModal = () => {
+    setIsLyricsModalOpen(false);
+    // Don't reset showSyncControls here anymore, as we want to maintain the synced state
+  };
 
   return (
     <div className="player">

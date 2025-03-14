@@ -8,8 +8,7 @@ const morgan = require("morgan");
 const { pool, SSL_OPTIONS, CONFIG } = require("./config/db_credenciales");
 const cron = require('node-cron');
 const axios = require('axios'); // Added axios import
-const redisClient = require('./routes/redisClient'); // Added redisClient import
-
+const { createClient } = require("redis");
 
 // Importar rutas
 const usuarios = require("./routes/usuarios");
@@ -19,7 +18,10 @@ const proxyRoutes = require("./routes/proxyRoutes");
 const spotifyRoutes = require("./routes/spotifyRoutes");
 const youtubeRoutes = require("./routes/youtubeRoutes");
 const likes = require("./routes/likes");
-
+const nooxai = require("./routes/nooxai");
+// Configurar cliente Redis
+const redisClient = createClient();
+redisClient.on("error", (err) => console.error("Redis Client Error:", err));
 const app = express();
 
 // Middlewares
@@ -36,6 +38,7 @@ app.use("/", proxyRoutes);
 app.use("/", spotifyRoutes);
 app.use("/", youtubeRoutes);
 app.use("/", likes);
+app.use("/", nooxai);
 
 // Iniciar servidor HTTP o HTTPS según disponibilidad de certificados
 const PORT = CONFIG.PORT || 5030;

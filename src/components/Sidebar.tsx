@@ -95,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className={`sidebar ${getSidebarClass()}`}>
         {/* Sidebar Header / Encabezado de la barra lateral */}
         <div className="sidebar-header">
-          <h2>Menu</h2>
+          <h2>Noox Music</h2>
           {isMobile ? (
             <button className="close-btn" onClick={toggleSidebar}>
               <X size={24} />
