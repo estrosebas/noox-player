@@ -202,8 +202,13 @@
   }
 }
 .custom-swal-popup {
-  z-index: 20000 !important;
+  z-index: 2147483647 !important; /* Maximum possible z-index value */
 }
+
 .swal2-popup {
-  z-index: 20000 !important; /* Ensure SweetAlert appears above other elements */
+  z-index: 2147483647 !important; /* Maximum possible z-index value */
+}
+
+.swal2-container {
+  z-index: 2147483647 !important; /* Maximum possible z-index value */
 }

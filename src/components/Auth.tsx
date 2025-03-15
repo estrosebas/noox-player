@@ -1,3 +1,6 @@
+// Auth Component - Handles user authentication and registration
+// Componente Auth - Maneja la autenticación y registro de usuarios
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -7,29 +10,33 @@ import Cookies from 'js-cookie';
 import Swal from 'sweetalert2';
 import '../styles/Auth.css';
 
+// Interfaces / Interfaces
 interface AuthProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean;      // Modal open state / Estado de apertura del modal
+  onClose: () => void;  // Close handler / Manejador de cierre
 }
 
 interface UserData {
-  usuario_id: number;
-  nombre: string;
-  correo: string;
+  usuario_id: number;  // User ID / ID del usuario
+  nombre: string;      // User name / Nombre del usuario
+  correo: string;      // User email / Correo del usuario
 }
 
 const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
-  const [isLogin, setIsLogin] = useState(true);
+  // State Management / Gestión de estados
+  const [isLogin, setIsLogin] = useState(true);  // Toggle between login/register / Alternar entre inicio de sesión/registro
   const [formData, setFormData] = useState({
-    nombre: '',
-    correo: '',
-    contrasena: '',
+    nombre: '',      // Name field / Campo de nombre
+    correo: '',      // Email field / Campo de correo
+    contrasena: '',  // Password field / Campo de contraseña
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(false);              // Loading state / Estado de carga
+  const [error, setError] = useState('');                     // Error message / Mensaje de error
+  const [userData, setUserData] = useState<UserData | null>(null);  // User data / Datos del usuario
 
+  // Effects / Efectos
   useEffect(() => {
+    // Check for existing session / Verificar sesión existente
     const sessionCookie = Cookies.get('session');
     if (sessionCookie) {
       const user = JSON.parse(sessionCookie);
@@ -44,7 +51,9 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Event Handlers / Manejadores de eventos
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Handle form input changes / Manejar cambios en el formulario
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -52,6 +61,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
   };
 
   const handleLogout = () => {
+    // Handle user logout / Manejar cierre de sesión
     Cookies.remove('session');
     setUserData(null);
     onClose();
@@ -68,12 +78,14 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // Handle form submission / Manejar envío del formulario
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
       if (isLogin) {
+        // Login process / Proceso de inicio de sesión
         const response = await axios.post(
           'https://noox.ooguy.com:5030/api/login',
           {
@@ -99,6 +111,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
           },
         });
       } else {
+        // Registration process / Proceso de registro
         const response = await axios.post(
           'https://noox.ooguy.com:5030/api/usuarios',
           {
@@ -121,9 +134,11 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
         });
       }
 
+      // Reset form and close modal / Reiniciar formulario y cerrar modal
       setFormData({ nombre: '', correo: '', contrasena: '' });
       onClose();
     } catch (err) {
+      // Error handling / Manejo de errores
       console.error('Error:', err);
       setError(isLogin ? 'Invalid email or password.' : 'Registration failed.');
       Swal.fire({
@@ -141,6 +156,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
   };
 
   const handleGoogleSuccess = async (response: any) => {
+    // Handle Google OAuth success / Manejar éxito de OAuth de Google
     try {
       const token = response.credential;
       const userResponse = await axios.post(
@@ -179,16 +195,20 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // Early return if modal is closed / Retorno anticipado si el modal está cerrado
   if (!isOpen) return null;
 
+  // Component Render / Renderizado del componente
   return (
     <AnimatePresence>
+      {/* Modal Overlay / Superposición del modal */}
       <div
         className="modal-overlay"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
       >
+        {/* Modal Container with Animation / Contenedor del modal con animación */}
         <motion.div
           className="auth-modal"
           initial={{ scale: 0.9, opacity: 0 }}
@@ -196,11 +216,14 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Close Button / Botón de cierre */}
           <button className="close-button" onClick={onClose}>
             <X size={24} />
           </button>
 
+          {/* Modal Content / Contenido del modal */}
           {userData ? (
+            // User Profile View / Vista del perfil de usuario
             <div className="profile-info">
               <h3>Profile</h3>
               <div className="profile-field">
@@ -216,7 +239,8 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
               </button>
             </div>
           ) : (
-            <>
+            // Authentication Form / Formulario de autenticación
+            <div className="auth-container">
               <div className="auth-header">
                 <h2>{isLogin ? 'Login to noox music' : 'Create account'}</h2>
               </div>
@@ -292,7 +316,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose }) => {
                   </span>
                 </div>
               </form>
-            </>
+            </div>
           )}
         </motion.div>
       </div>

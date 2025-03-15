@@ -1,3 +1,6 @@
+// Playlists Component - Manages user playlists and playlist operations
+// Componente Playlists - Gestiona las listas de reproducción del usuario y sus operaciones
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Play, Trash2, Download } from 'lucide-react';
@@ -6,73 +9,77 @@ import Cookies from 'js-cookie';
 import Swal from 'sweetalert2';
 import '../styles/Playlists.css';
 
+// Interfaces / Interfaces
 interface PlaylistItem {
-  playlist_id: number;
-  nombre: string;
-  descripcion: string;
-  usuario_id: number;
-  fecha_creacion: string;
+  playlist_id: number;      // Playlist identifier / Identificador de la lista
+  nombre: string;          // Playlist name / Nombre de la lista
+  descripcion: string;     // Playlist description / Descripción de la lista
+  usuario_id: number;      // User identifier / Identificador del usuario
+  fecha_creacion: string;  // Creation date / Fecha de creación
 }
 
 interface Song {
-  cancion_id: number;
-  nombre: string;
-  playlist_name: string;
-  url_cancion: string;
-  url_thumbnail: string;
+  cancion_id: number;      // Song identifier / Identificador de la canción
+  nombre: string;          // Song name / Nombre de la canción
+  playlist_name: string;   // Playlist name / Nombre de la lista
+  url_cancion: string;     // Song URL / URL de la canción
+  url_thumbnail: string;   // Thumbnail URL / URL de la miniatura
 }
 
 interface PlaylistsProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSongSelect: (song: { title: string; id: string; url: string; thumbnail: string }) => void;
+  isOpen: boolean;         // Modal visibility state / Estado de visibilidad del modal
+  onClose: () => void;     // Close handler / Manejador de cierre
+  onSongSelect: (song: { title: string; id: string; url: string; thumbnail: string }) => void;  // Song selection handler / Manejador de selección de canción
 }
 
 const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) => {
-  const [playlists, setPlaylists] = useState<PlaylistItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [songsLoading, setSongsLoading] = useState(false);
-  const [songsError, setSongsError] = useState('');
-  const [songsModalOpen, setSongsModalOpen] = useState(false);
-  const [currentPlaylist, setCurrentPlaylist] = useState<PlaylistItem | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newPlaylist, setNewPlaylist] = useState({ nombre: '', descripcion: '' });
+  // State Management / Gestión de estados
+  const [playlists, setPlaylists] = useState<PlaylistItem[]>([]);              // Playlists list / Lista de playlists
+  const [loading, setLoading] = useState(true);                                // Loading state / Estado de carga
+  const [error, setError] = useState('');                                      // Error message / Mensaje de error
+  const [songs, setSongs] = useState<Song[]>([]);                             // Songs list / Lista de canciones
+  const [songsLoading, setSongsLoading] = useState(false);                    // Songs loading state / Estado de carga de canciones
+  const [songsError, setSongsError] = useState('');                           // Songs error message / Mensaje de error de canciones
+  const [songsModalOpen, setSongsModalOpen] = useState(false);                // Songs modal state / Estado del modal de canciones
+  const [currentPlaylist, setCurrentPlaylist] = useState<PlaylistItem | null>(null);  // Current playlist / Lista actual
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);          // Create modal state / Estado del modal de creación
+  const [newPlaylist, setNewPlaylist] = useState({ nombre: '', descripcion: '' });  // New playlist data / Datos de nueva lista
   
-  // Import playlist states
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [source, setSource] = useState<"spotify" | "youtube" | "local">("youtube");
-  const [inputValue, setInputValue] = useState("");
-  const [importedPlaylistData, setImportedPlaylistData] = useState<any[]>([]);
-  const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState("");
-  const [importPlaylistName, setImportPlaylistName] = useState("");
-  const [importPlaylistDescription, setImportPlaylistDescription] = useState("");
+  // Import States / Estados de importación
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);          // Import modal state / Estado del modal de importación
+  const [source, setSource] = useState<"spotify" | "youtube" | "local">("youtube");  // Import source / Fuente de importación
+  const [inputValue, setInputValue] = useState("");                           // Input value / Valor de entrada
+  const [importedPlaylistData, setImportedPlaylistData] = useState<any[]>([]);  // Imported data / Datos importados
+  const [importLoading, setImportLoading] = useState(false);                  // Import loading state / Estado de carga de importación
+  const [importError, setImportError] = useState("");                         // Import error / Error de importación
+  const [importPlaylistName, setImportPlaylistName] = useState("");          // Import name / Nombre de importación
+  const [importPlaylistDescription, setImportPlaylistDescription] = useState("");  // Import description / Descripción de importación
 
   // Fetch playlists when modal opens or user logs in/out
   useEffect(() => {
     if (isOpen) {
       fetchPlaylists();
+      
+      // Set up interval to check for session changes
+      const intervalId = setInterval(() => {
+        const sessionCookie = Cookies.get('session');
+        if (!sessionCookie && playlists.length > 0) {
+          // User logged out, clear playlists
+          setPlaylists([]);
+          setError('Please log in to view your playlists');
+        } else if (sessionCookie && playlists.length === 0) {
+          // User logged in, fetch playlists
+          fetchPlaylists();
+        }
+      }, 1000);
+  
+      return () => clearInterval(intervalId);
     }
-
-    // Set up interval to check for session changes
-    const intervalId = setInterval(() => {
-      const sessionCookie = Cookies.get('session');
-      if (!sessionCookie && playlists.length > 0) {
-        // User logged out, clear playlists
-        setPlaylists([]);
-        setError('Please log in to view your playlists');
-      } else if (sessionCookie && playlists.length === 0) {
-        // User logged in, fetch playlists
-        fetchPlaylists();
-      }
-    }, 1000);
-
-    return () => clearInterval(intervalId);
   }, [isOpen]);
 
+  // API Functions / Funciones de API
   const fetchPlaylists = async () => {
+    // Fetch user playlists / Obtener listas del usuario
     const sessionCookie = Cookies.get('session');
     if (!sessionCookie) {
       setError('Please log in to view your playlists');
@@ -96,7 +103,9 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
     }
   };
 
+  // Event Handlers / Manejadores de eventos
   const handlePlaylistClick = async (playlist: PlaylistItem) => {
+    // Handle playlist selection / Manejar selección de lista
     setCurrentPlaylist(playlist);
     setSongsError('');
     setSongs([]);
@@ -122,6 +131,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   };
 
   const handlePlayPlaylist = () => {
+    // Play entire playlist / Reproducir lista completa
     if (songs.length === 0) return;
     
     const formattedSongs = songs.map(song => ({
@@ -141,6 +151,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   };
 
   const handleSelectSong = (song: Song, index: number) => {
+    // Handle individual song selection / Manejar selección de canción individual
     const formattedSongs = songs.map(s => ({
       title: s.nombre,
       id: s.cancion_id.toString(),
@@ -163,6 +174,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   };
 
   const handleCreatePlaylist = async () => {
+    // Create new playlist / Crear nueva lista
     if (!newPlaylist.nombre.trim() || !newPlaylist.descripcion.trim()) {
       Swal.fire({
         icon: 'error',
@@ -222,6 +234,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   };
 
   const handleDeleteSong = async (songId: number) => {
+    // Delete song from playlist / Eliminar canción de la lista
     const result = await Swal.fire({
       title: 'Delete Song',
       text: 'Are you sure you want to remove this song from the playlist?',
@@ -261,6 +274,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   };
 
   const handleDeletePlaylist = async () => {
+    // Delete entire playlist / Eliminar lista completa
     if (!currentPlaylist) return;
 
     const result = await Swal.fire({
@@ -302,8 +316,9 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
     }
   };
 
-  // Import playlist functions
+  // Import Functions / Funciones de importación
   const importPlaylist = async () => {
+    // Import playlist from external source / Importar lista desde fuente externa
     if (!inputValue.trim()) {
       setImportError("Please enter a valid URL");
       return;
@@ -334,6 +349,7 @@ const Playlists: React.FC<PlaylistsProps> = ({ isOpen, onClose, onSongSelect }) 
   };
 
   const handleImportPlaylist = async () => {
+    // Process imported playlist / Procesar lista importada
     if (!importPlaylistName || !importPlaylistDescription) {
       setImportError("Please enter a name and description for the playlist");
       return;

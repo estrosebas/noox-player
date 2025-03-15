@@ -13,7 +13,7 @@
 
 .trending-scroll {
   max-height: calc(100vh - 250px); /* Adjust based on viewport height minus header and player */
-  overflow-y: auto;
+  /*overflow-y: auto;*/ /*experiment ode escroll**/
   padding: 0 16px;
   margin-bottom: 16px; /* Less margin on desktop */
 }
