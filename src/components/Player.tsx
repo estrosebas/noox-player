@@ -86,9 +86,9 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
   const [playlistError, setPlaylistError] = useState('');
 
   ///estados para el lrc
-  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
+  const [availableLanguages] = useState<string[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
-  const [loadingLanguages, setLoadingLanguages] = useState<boolean>(false);
+  const [loadingLanguages] = useState<boolean>(false);
   // Estado para almacenar la letra en formato LRC sin procesar
   // Estado para almacenar la letra parseada: array de { time, text }
   const [parsedLyrics, setParsedLyrics] = useState<Array<{ time: number; text: string }>>([]);
@@ -629,74 +629,65 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     // Si la canción actual ha cambiado, realizamos el fetch para actualizar las letras sincronizadas
     if (songDetails.youtubeUrl !== previousSongUrl) {
       setPreviousSongUrl(songDetails.youtubeUrl); // Actualizamos la URL para evitar fetch redundante
-      
+  
       // Realizamos el fetch solo si la URL de YouTube ha cambiado
-      setLoadingLanguages(true);
-      axios.post(
-        'https://noox.ooguy.com:5030/letraslrcrevisr',
-        { youtube_url: songDetails.youtubeUrl }
-      )
-      .then(response => {
-        setAvailableLanguages(response.data.idiomasDisponibles);
-        
-        // If this song was previously synced, try to fetch the lyrics again
-        if (syncedSongId === songDetails.youtubeUrl) {
-          setLoadingLyrics(true);
-          axios.post(
-            'https://noox.ooguy.com:5030/letraslrc',
-            { youtube_url: songDetails.youtubeUrl, idioma: selectedLanguage }
-          )
-          .then(lyricsResponse => {
-            const lrc = lyricsResponse.data.lrc;
-            setLyrics(lrc);
-            const parsed = parseLRC(lrc);
-            setParsedLyrics(parsed);
-          })
-          .catch(error => {
-            console.error('Error re-fetching synced lyrics:', error);
-            setParsedLyrics([]);
-            setSyncedSongId(null);
-            setShowSyncControls(true);
-          })
-          .finally(() => {
-            setLoadingLyrics(false);
-          });
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching available languages:', error);
-        setAvailableLanguages([]);
-      })
-      .finally(() => {
-        setLoadingLanguages(false);
-      });
+      setLoadingLyrics(true);
+      axios
+        .get('https://noox.ooguy.com:5030/lyrics', {
+          params: {
+            track: songDetails.name,
+            artist: songDetails.author,
+          },
+        })
+        .then((response) => {
+          const lrc = response.data; // Asegúrate de que `response.data` contiene el LRC
+          const parsed = parseLRC(lrc);
+          setParsedLyrics(parsed);
+          setSyncedSongId(songDetails.youtubeUrl);
+          setShowSyncControls(false);
+        })
+        .catch((error) => {
+          console.error('Error fetching synchronized lyrics:', error);
+          setParsedLyrics([]);
+          setSyncedSongId(null);
+          setShowSyncControls(true);
+        })
+        .finally(() => {
+          setLoadingLyrics(false);
+        });
     }
-  }, [songDetails.youtubeUrl, syncedSongId, selectedLanguage]);
-
+  }, [songDetails.youtubeUrl]);
   // Handle sync lyrics
   // Manejar sincronización de letras
   const handleSyncLyrics = async () => {
-    setLoadingLyrics(true);
-    try {
-      const response = await axios.post(
-        'https://noox.ooguy.com:5030/letraslrc',
-        { youtube_url: songDetails.youtubeUrl, idioma: selectedLanguage }
-      );
-      const lrc = response.data.lrc;
-      setLyrics(lrc);
-  
-      // Parseamos el LRC para combinar líneas con timestamps idénticos
-      const parsed = parseLRC(lrc);
-      setParsedLyrics(parsed);
-      setShowSyncControls(false);
-      setSyncedSongId(songDetails.youtubeUrl); // Save the synced song ID
-  
-    } catch (error) {
-      console.error('Error fetching lyrics:', error);
-    } finally {
-      setLoadingLyrics(false);
-    }
-  };
+  if (!songDetails.name || !songDetails.author) return;
+
+  setLoadingLyrics(true);
+  try {
+    const response = await axios.get(
+      `https://noox.ooguy.com:5030/lyrics`,
+      {
+        params: {
+          track: songDetails.name,
+          artist: songDetails.author,
+        },
+      }
+    );
+
+    const lrc = response.data.lrc; // Assuming the response contains the LRC data
+    setLyrics(lrc);
+
+    // Parse the LRC to combine lines with identical timestamps
+    const parsed = parseLRC(lrc);
+    setParsedLyrics(parsed);
+    setShowSyncControls(false);
+    setSyncedSongId(songDetails.youtubeUrl); // Save the synced song ID
+  } catch (error) {
+    console.error('Error fetching synchronized lyrics:', error);
+  } finally {
+    setLoadingLyrics(false);
+  }
+};
   
   
   // Get YouTube embed URL - Extracts video ID and returns embed URL
@@ -723,45 +714,32 @@ const Player = forwardRef<MusicPlayerRef, PlayerProps>((props, ref) => {
     handleNextSong();
   };
   const parseLRC = (lrc: string) => {
-    // "linesByTime" usaremos un objeto para agrupar por timestamp
-    const linesByTime: Record<number, string> = {};
-  
-    // Split LRC into lines / Dividir LRC en líneas
-    const lines = lrc.split('\n');
-  
-    for (const line of lines) {
-      // Use regex to capture timestamp and text
-      // Usar expresión regular para capturar marca de tiempo y texto
-      const match = line.match(/\[(\d{2}:\d{2}(?:\.\d{2,3})?)\](.*)/);
-      if (match) {
-        const timeString = match[1];  // Example/Ejemplo: "00:21.03"
-        const textPart = match[2].trim(); // Example/Ejemplo: "♪ FALL APART"
-  
-        // Convert time string to seconds / Convertir string de tiempo a segundos
-        const [minutes, seconds] = timeString.split(':');
-        const timeInSeconds = parseInt(minutes, 10) * 60 + parseFloat(seconds);
-  
-        // Concatenate text if timestamp exists / Concatenar texto si la marca de tiempo existe
-        if (linesByTime[timeInSeconds] !== undefined) {
-          linesByTime[timeInSeconds] += ' ' + textPart;
-        } else {
-          linesByTime[timeInSeconds] = textPart;
-        }
+  const linesByTime: Record<number, string> = {};
+  const lines = lrc.split('\n');
+
+  for (const line of lines) {
+    const match = line.match(/\[(\d{2}:\d{2}(?:\.\d{2,3})?)\](.*)/);
+    if (match) {
+      const timeString = match[1];
+      const textPart = match[2].trim();
+      const [minutes, seconds] = timeString.split(':');
+      const timeInSeconds = parseInt(minutes, 10) * 60 + parseFloat(seconds);
+
+      if (linesByTime[timeInSeconds] !== undefined) {
+        linesByTime[timeInSeconds] += ' ' + textPart;
+      } else {
+        linesByTime[timeInSeconds] = textPart;
       }
     }
-  
-    // Convertimos "linesByTime" en un array de objetos { time, text }
-    const parsedArray = Object.keys(linesByTime)
-      .map(key => {
-        const time = parseFloat(key);
-        const text = linesByTime[time];
-        return { time, text };
-      })
-      // Ordenamos por tiempo ascendente
-      .sort((a, b) => a.time - b.time);
-  
-    return parsedArray;
-  };
+  }
+
+  return Object.keys(linesByTime)
+    .map(key => ({
+      time: parseFloat(key),
+      text: linesByTime[parseFloat(key)],
+    }))
+    .sort((a, b) => a.time - b.time);
+};
 
   // Update active line index and auto-scroll
   // Actualizar índice de línea activa y auto-scroll

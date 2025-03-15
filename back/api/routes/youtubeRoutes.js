@@ -427,4 +427,145 @@ router.get('/api/yt-searchytapi', async (req, res) => {
   res.status(500).send('Hubo un error al procesar la búsqueda.');
 }
 });
+
+
+  // Función para obtener las letras de una canción
+function fetchLyrics(track, artist) {
+    const trackFormatted = encodeURIComponent(track.replace(' ', '-'));
+    const artistFormatted = encodeURIComponent(artist.replace(' ', '-'));
+    
+    const url = `https://apic-desktop.musixmatch.com/ws/1.1/macro.subtitles.get?format=json&user_language=en&namespace=lyrics_synched&f_subtitle_length_max_deviation=1&subtitle_format=mxm&app_id=web-desktop-app-v1.0&usertoken=201219dbdb0f6aaba1c774bd931d0e79a28024e28db027ae72955c&q_track=${trackFormatted}&q_artist=${artistFormatted}`;
+    
+    return axios.get(url, {
+    headers: {
+      "Cookie": "AWSELB=55578B011601B1EF8BC274C33F9043CA947F99DCFF0A80541772015CA2B39C35C0F9E1C932D31725A7310BCAEB0C37431E024E2B45320B7F2C84490C2C97351FDE34690157",
+      "Origin": "musixmatch.com"
+    }
+    }).then(response => {
+    const data = response.data;
+    const macroCalls = data.message.body.macro_calls;
+
+    if (macroCalls["track.subtitles.get"]) {
+      const subtitlesData = macroCalls["track.subtitles.get"].message;
+      if (subtitlesData.body && subtitlesData.body.subtitle_list) {
+      const subtitles = subtitlesData.body.subtitle_list;
+      if (subtitles.length > 0) {
+        const lyrics = JSON.parse(subtitles[0].subtitle.subtitle_body);
+        return lyrics.map(line => {
+        const minutes = Math.floor(line.time.minutes).toString().padStart(2, '0');
+        const seconds = Math.floor(line.time.seconds).toString().padStart(2, '0');
+        const hundredths = Math.floor(line.time.hundredths).toString().padStart(2, '0');
+        return `[${minutes}:${seconds}.${hundredths}]${line.text}`;
+        }).join('\n');
+      }
+      }
+    }
+    
+    if (macroCalls["matcher.track.get"]) {
+      const trackInfo = macroCalls["matcher.track.get"].message.body.track;
+      if (trackInfo.instrumental) {
+      return "🎵 La canción es instrumental, no tiene letra.";
+      }
+    }
+
+    return "❌ No se encontró la letra.";
+    }).catch(err => {
+    console.error('Error fetching lyrics:', err);
+    return "❌ Error en la petición de letras.";
+    });
+}
+
+router.get('/lyrics', async (req, res) => {
+    const { track, artist } = req.query;
+  
+    if (!track || !artist) {
+      return res.status(400).send('Por favor ingrese el nombre de la canción y el artista');
+    }
+  
+    try {
+      const lyrics = await fetchLyrics(track, artist);
+  
+      if (Array.isArray(lyrics)) {
+        let lyricsResponse = '';
+        lyrics.forEach(line => {
+          lyricsResponse += `[${line.time}] ${line.text}\n`;
+        });
+        res.send(lyricsResponse);
+      } else {
+        res.send(lyrics);
+      }
+    } catch (error) {
+      console.error('Error handling lyrics request:', error);
+      res.status(500).send('Hubo un error al obtener las letras.');
+    }
+});
+
+router.get('/api/download', async (req, res) => {
+  const { url } = req.query;
+  if (!url) {
+    return res.status(400).json({ error: "Falta la URL del video" });
+  }
+
+  // Crear un nombre temporal único para el archivo
+  const tempDir = 'temp_downloads';
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir);
+  }
+
+  try {
+    // Primero obtener información del video para el nombre del archivo
+    const infoCmd = `yt-dlp --cookies-from-browser firefox -j "${url}"`;
+    const videoInfo = await new Promise((resolve, reject) => {
+      exec(infoCmd, (error, stdout) => {
+        if (error) reject(error);
+        else resolve(JSON.parse(stdout));
+      });
+    });
+
+    // Crear nombre de archivo seguro
+    const safeTitle = videoInfo.title.replace(/[^a-z0-9]/gi, '_');
+    const outputPath = `${tempDir}/${safeTitle}.mp3`;
+
+    // Comando para descargar el audio con fragmentación
+    const downloadCmd = `yt-dlp --cookies-from-browser firefox -f "ba" -x --audio-format mp3 --audio-quality 0 -o "${outputPath}" --concurrent-fragments 8 --fragment-retries 10 "${url}"`;
+
+    // Ejecutar la descarga
+    await new Promise((resolve, reject) => {
+      exec(downloadCmd, (error) => {
+      if (error) reject(error);
+      else resolve();
+      });
+    });
+
+    // Enviar el archivo
+    res.download(outputPath, `${videoInfo.title}.mp3`, (err) => {
+      // Eliminar el archivo después de enviarlo (o si hay error)
+      fs.unlink(outputPath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error('Error eliminando archivo:', unlinkErr);
+        }
+      });
+
+      if (err) {
+        console.error('Error enviando archivo:', err);
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en la descarga:', error);
+    res.status(500).json({ 
+      error: "Error al descargar el audio",
+      details: error.message 
+    });
+
+    // Limpiar archivos temporales en caso de error
+    fs.readdir(tempDir, (err, files) => {
+      if (err) return;
+      files.forEach(file => {
+        fs.unlink(`${tempDir}/${file}`, () => {});
+      });
+    });
+  }
+});
+
 module.exports = router;

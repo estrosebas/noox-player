@@ -5,7 +5,9 @@ const { OAuth2Client } = require("google-auth-library");
 const { pool } = require("../config/db_credenciales"); 
 
 // Tu verdadero Client ID de Google (no una API Key de YouTube)
-const CLIENT_ID = "google clave de cliente";
+const CLIENT_ID = '131317178402-b96jr7cg0pp88ordmgv68hsfr4rvedhd.apps.googleusercontent.com'; // Reemplaza con tu Client ID de Google
+
+
 const client = new OAuth2Client(CLIENT_ID);
 
 const router = express.Router();
