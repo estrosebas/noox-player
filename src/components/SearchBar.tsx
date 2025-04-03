@@ -105,7 +105,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ fetchAudio, youtubeAPI }) => {
       setSuggestions([]);
       const apiUrl = youtubeAPI
         ? `https://noox.ooguy.com:5030/api/yt-searchytapi?query=${encodeURIComponent(query)}`
-        : `https://noox.ooguy.com:5030/api/yt-search?query=${encodeURIComponent(query)}`;
+        : `https://noox.ooguy.com:5030/api/yt-searchytapimusic?query=${encodeURIComponent(query)}`;
       const response = await axios.get(apiUrl);
       setVideos(response.data);
     } catch (error) {

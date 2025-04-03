@@ -63,7 +63,7 @@ router.post("/api/google-login", async (req, res) => {
  * 2️⃣ Login Normal
  * POST /api/auth/login
  */
-router.post("/login", async (req, res) => {
+router.post("/api/login", async (req, res) => {
   const { correo, contrasena } = req.body;
 
   if (!correo || !contrasena) {

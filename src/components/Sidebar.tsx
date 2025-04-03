@@ -160,7 +160,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="sidebar-settings">
             <h3>Settings</h3>
             <div className="settings-option">
-              <span>Use YouTube API</span>
+              <span>{youtubeAPI ? 'Full Content' : 'Only Music'}</span>
+              <div className="info-tooltip">
+                <i className="info-icon">!</i>
+                <span className="tooltip-text">Full content: Disfruta de toda la música<br />Only music: Solo contenido musical</span>
+              </div>
               <label className="switch">
                 <input 
                   type="checkbox" 
