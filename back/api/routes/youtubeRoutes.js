@@ -170,7 +170,7 @@ function generarUrlLetras(artista, cancion) {
   return `https://www.letras.com/${artista}/${cancion}/`;
 }
 
-/*
+
 router.get("/api/yt-searchytapi", async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: "Falta el parámetro 'query'" });
@@ -198,7 +198,7 @@ router.get("/api/yt-searchytapi", async (req, res) => {
     console.error(`Error en la búsqueda de YouTube API: ${error}`);
     res.status(500).json({ error: "Error al buscar videos en YouTube API" });
   }
-});*/
+});
 
 router.get("/api/suggestions", async (req, res) => {
   const { query } = req.query;
@@ -398,7 +398,7 @@ function searchSong(query) {
     });
 }
 // Ruta para buscar canciones y obtener letras
-router.get('/api/yt-searchytapi', async (req, res) => {
+router.get('/api/yt-searchytapimusic', async (req, res) => {
   const query = req.query.query;
 
   if (!query) {
@@ -475,6 +475,8 @@ function fetchLyrics(track, artist) {
     });
 }
 
+
+// Ruta para obtener las letras de una canción (Musixmatch) lrc
 router.get('/lyrics', async (req, res) => {
     const { track, artist } = req.query;
   
@@ -500,6 +502,8 @@ router.get('/lyrics', async (req, res) => {
     }
 });
 
+
+//endpoint de descaga
 router.get('/api/download', async (req, res) => {
   const { url } = req.query;
   if (!url) {
